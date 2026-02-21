@@ -43,31 +43,48 @@ function PrepProgressBar({ emp, prepWorkTime }: { emp: PrepEmployee; prepWorkTim
 function PrepWorker({ emp, color }: { emp: PrepEmployee; color: string }) {
   return (
     <group position={[0, 0, -0.7]}>
-      <mesh position={[0, 0.25, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.22, 0.5, 8]} />
-        <meshStandardMaterial color={color} />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
+        <meshStandardMaterial color="#1e293b" />
       </mesh>
-      <mesh position={[0, 0.6, 0]} castShadow>
+
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.15, 0.3, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+
+      <mesh position={[0, 0.65, 0]} castShadow>
         <cylinderGeometry args={[0.13, 0.18, 0.25, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+
+      <mesh position={[0, 0.55, 0.14]}>
+        <boxGeometry args={[0.12, 0.04, 0.02]} />
         <meshStandardMaterial color={color} />
       </mesh>
+
       <mesh position={[0, 0.85, 0]} castShadow>
-        <sphereGeometry args={[0.15, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" />
+        <sphereGeometry args={[0.14, 8, 8]} />
+        <meshStandardMaterial color="#deb887" />
       </mesh>
+
       <mesh position={[0, 1.02, 0]} castShadow>
-        <cylinderGeometry args={[0.17, 0.17, 0.05, 8]} />
+        <cylinderGeometry args={[0.16, 0.16, 0.08, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+      <mesh position={[0, 1.08, 0]} castShadow>
+        <cylinderGeometry args={[0.1, 0.16, 0.06, 8]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
 
       {emp.isWorking && (
         <>
-          <mesh position={[0.05, 0.88, 0.1]}>
-            <sphereGeometry args={[0.025, 6, 6]} />
+          <mesh position={[0.04, 0.88, 0.1]}>
+            <sphereGeometry args={[0.02, 6, 6]} />
             <meshStandardMaterial color="#1e293b" />
           </mesh>
-          <mesh position={[-0.05, 0.88, 0.1]}>
-            <sphereGeometry args={[0.025, 6, 6]} />
+          <mesh position={[-0.04, 0.88, 0.1]}>
+            <sphereGeometry args={[0.02, 6, 6]} />
             <meshStandardMaterial color="#1e293b" />
           </mesh>
         </>
@@ -75,17 +92,37 @@ function PrepWorker({ emp, color }: { emp: PrepEmployee; color: string }) {
 
       {!emp.isWorking && !emp.pizzaReady && (
         <>
-          <mesh position={[0.05, 0.87, 0.1]}>
-            <boxGeometry args={[0.05, 0.012, 0.01]} />
+          <mesh position={[0.04, 0.87, 0.1]}>
+            <boxGeometry args={[0.04, 0.01, 0.01]} />
             <meshStandardMaterial color="#1e293b" />
           </mesh>
-          <mesh position={[-0.05, 0.87, 0.1]}>
-            <boxGeometry args={[0.05, 0.012, 0.01]} />
+          <mesh position={[-0.04, 0.87, 0.1]}>
+            <boxGeometry args={[0.04, 0.01, 0.01]} />
             <meshStandardMaterial color="#1e293b" />
           </mesh>
         </>
       )}
     </group>
+  );
+}
+
+function CuttingBoard({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh castShadow>
+        <boxGeometry args={[0.3, 0.02, 0.2]} />
+        <meshStandardMaterial color="#c4a26e" />
+      </mesh>
+    </group>
+  );
+}
+
+function Ingredient({ position, color }: { position: [number, number, number]; color: string }) {
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[0.04, 6, 6]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
   );
 }
 
@@ -105,7 +142,7 @@ export function PrepStation({
   const updatePrepEmployee = useOfficeGame((s) => s.updatePrepEmployee);
   const prepWorkTime = useOfficeGame((s) => s.prepWorkTime);
   const pos = PREP_POSITIONS[index] || PREP_POSITIONS[0];
-  const colors = ["#8b5cf6", "#06b6d4", "#ec4899"];
+  const colors = ["#dc2626", "#2563eb", "#16a34a"];
 
   useFrame((_, delta) => {
     if (!playerRef.current) return;
@@ -133,29 +170,40 @@ export function PrepStation({
 
   return (
     <group position={pos}>
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.4, 0.05, 0.9]} />
-        <meshStandardMaterial color="#d4d4d8" />
-      </mesh>
-      <mesh position={[-0.6, 0.15, -0.35]}>
-        <boxGeometry args={[0.08, 0.3, 0.08]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-      <mesh position={[0.6, 0.15, -0.35]}>
-        <boxGeometry args={[0.08, 0.3, 0.08]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-      <mesh position={[-0.6, 0.15, 0.35]}>
-        <boxGeometry args={[0.08, 0.3, 0.08]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-      <mesh position={[0.6, 0.15, 0.35]}>
-        <boxGeometry args={[0.08, 0.3, 0.08]} />
-        <meshStandardMaterial color="#a1a1aa" />
+      <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.6, 0.06, 1.0]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
       </mesh>
 
+      <mesh position={[0, 0.19, 0]}>
+        <boxGeometry args={[1.5, 0.38, 0.9]} />
+        <meshStandardMaterial color="#f5f5f4" />
+      </mesh>
+      <mesh position={[0, 0.19, 0.46]}>
+        <boxGeometry args={[1.5, 0.38, 0.02]} />
+        <meshStandardMaterial color="#e7e5e4" />
+      </mesh>
+
+      <mesh position={[-0.55, 0.19, 0.47]}>
+        <boxGeometry args={[0.06, 0.06, 0.02]} />
+        <meshStandardMaterial color="#a1a1aa" metalness={0.5} />
+      </mesh>
+      <mesh position={[0.55, 0.19, 0.47]}>
+        <boxGeometry args={[0.06, 0.06, 0.02]} />
+        <meshStandardMaterial color="#a1a1aa" metalness={0.5} />
+      </mesh>
+
+      <CuttingBoard position={[-0.4, 0.46, 0.1]} />
+      <CuttingBoard position={[0.4, 0.46, 0.1]} />
+
+      <Ingredient position={[0.55, 0.48, -0.2]} color="#ef4444" />
+      <Ingredient position={[0.48, 0.48, -0.25]} color="#22c55e" />
+      <Ingredient position={[0.62, 0.48, -0.28]} color="#fbbf24" />
+      <Ingredient position={[-0.5, 0.48, -0.22]} color="#f97316" />
+      <Ingredient position={[-0.58, 0.48, -0.28]} color="#a855f7" />
+
       {emp.isWorking && (
-        <mesh position={[0, 0.38, 0.1]} castShadow>
+        <mesh position={[0, 0.5, 0.1]} castShadow>
           <cylinderGeometry args={[0.15, 0.15, 0.05, 8]} />
           <meshStandardMaterial color="#e8a849" />
         </mesh>
@@ -163,7 +211,7 @@ export function PrepStation({
 
       {emp.pizzaReady && (
         <>
-          <group position={[0, 0.38, 0.1]}>
+          <group position={[0, 0.5, 0.1]}>
             <mesh castShadow>
               <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
               <meshStandardMaterial color="#d4740a" />
@@ -213,8 +261,8 @@ export function PrepStation({
 
       <Text
         position={[0, -0.1, 0.6]}
-        fontSize={0.13}
-        color="#a1a1aa"
+        fontSize={0.12}
+        color="#78716c"
         anchorX="center"
         outlineWidth={0.01}
         outlineColor="#000000"

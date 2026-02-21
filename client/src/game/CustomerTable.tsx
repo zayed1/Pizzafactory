@@ -1,10 +1,82 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useOfficeGame, CustomerTable as CustomerTableType } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
 
 const INTERACT_DISTANCE = 2.0;
+
+function Chair({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[-0.12, 0.13, -0.12]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[0.12, 0.13, -0.12]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[-0.12, 0.13, 0.12]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[0.12, 0.13, 0.12]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[0, 0.27, 0]} castShadow>
+        <boxGeometry args={[0.3, 0.03, 0.3]} />
+        <meshStandardMaterial color="#8b5a2b" />
+      </mesh>
+      <mesh position={[0, 0.42, -0.13]} castShadow>
+        <boxGeometry args={[0.28, 0.28, 0.03]} />
+        <meshStandardMaterial color="#8b5a2b" />
+      </mesh>
+    </group>
+  );
+}
+
+function DiningTable() {
+  return (
+    <group>
+      <mesh position={[0, 0.38, 0.45]} castShadow receiveShadow>
+        <boxGeometry args={[0.9, 0.04, 0.7]} />
+        <meshStandardMaterial color="#6d3710" />
+      </mesh>
+      <mesh position={[-0.35, 0.18, 0.2]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[0.35, 0.18, 0.2]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[-0.35, 0.18, 0.7]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+      <mesh position={[0.35, 0.18, 0.7]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
+        <meshStandardMaterial color="#5c3d1e" />
+      </mesh>
+
+      <mesh position={[-0.2, 0.41, 0.35]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.005, 8]} />
+        <meshStandardMaterial color="#f5f5f4" />
+      </mesh>
+      <mesh position={[0.2, 0.41, 0.55]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.005, 8]} />
+        <meshStandardMaterial color="#f5f5f4" />
+      </mesh>
+
+      <mesh position={[0, 0.41, 0.45]}>
+        <cylinderGeometry args={[0.04, 0.03, 0.06, 6]} />
+        <meshStandardMaterial color="#dc2626" />
+      </mesh>
+    </group>
+  );
+}
 
 function CustomerModel({ table }: { table: CustomerTableType }) {
   if (!table.hasCustomer) return null;
@@ -14,42 +86,54 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
 
   return (
     <group position={[0, 0, 0.9]}>
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.22, 0.6, 8]} />
-        <meshStandardMaterial color="#64748b" />
-      </mesh>
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <cylinderGeometry args={[0.14, 0.18, 0.25, 8]} />
-        <meshStandardMaterial color="#64748b" />
-      </mesh>
-      <mesh position={[0, 0.95, 0]} castShadow>
-        <sphereGeometry args={[0.15, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
+        <meshStandardMaterial color="#4a5568" />
       </mesh>
 
-      <mesh position={[0.05, 0.98, 0.1]}>
-        <sphereGeometry args={[0.025, 6, 6]} />
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <cylinderGeometry args={[0.16, 0.12, 0.25, 8]} />
+        <meshStandardMaterial color="#6b7280" />
+      </mesh>
+
+      <mesh position={[0, 0.62, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.16, 0.2, 8]} />
+        <meshStandardMaterial color="#6b7280" />
+      </mesh>
+
+      <mesh position={[0, 0.82, 0]} castShadow>
+        <sphereGeometry args={[0.13, 8, 8]} />
+        <meshStandardMaterial color="#deb887" />
+      </mesh>
+
+      <mesh position={[0, 0.92, 0]} castShadow>
+        <sphereGeometry args={[0.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#4a3728" />
+      </mesh>
+
+      <mesh position={[0.04, 0.84, 0.1]}>
+        <sphereGeometry args={[0.02, 6, 6]} />
         <meshStandardMaterial color="#1e293b" />
       </mesh>
-      <mesh position={[-0.05, 0.98, 0.1]}>
-        <sphereGeometry args={[0.025, 6, 6]} />
+      <mesh position={[-0.04, 0.84, 0.1]}>
+        <sphereGeometry args={[0.02, 6, 6]} />
         <meshStandardMaterial color="#1e293b" />
       </mesh>
 
-      <group position={[0, 1.4, 0]}>
+      <group position={[0, 1.2, 0]}>
         <mesh>
-          <boxGeometry args={[0.6, 0.08, 0.05]} />
+          <boxGeometry args={[0.5, 0.07, 0.05]} />
           <meshStandardMaterial color="#334155" />
         </mesh>
-        <mesh position={[-0.3 + patienceRatio * 0.3, 0, 0.01]}>
-          <boxGeometry args={[patienceRatio * 0.58, 0.06, 0.02]} />
+        <mesh position={[-0.25 + patienceRatio * 0.25, 0, 0.01]}>
+          <boxGeometry args={[patienceRatio * 0.48, 0.05, 0.02]} />
           <meshStandardMaterial color={color} />
         </mesh>
       </group>
 
       <Text
-        position={[0, 1.65, 0]}
-        fontSize={0.18}
+        position={[0, 1.45, 0]}
+        fontSize={0.16}
         color={color}
         anchorX="center"
         outlineWidth={0.02}
@@ -94,7 +178,7 @@ export function CustomerTableComp({
       <group position={table.position}>
         <mesh position={[0, 0.3, 0.45]} receiveShadow>
           <boxGeometry args={[1.0, 0.6, 0.9]} />
-          <meshStandardMaterial color="#475569" opacity={0.3} transparent />
+          <meshStandardMaterial color="#475569" opacity={0.2} transparent />
         </mesh>
         <Text position={[0, 1.0, 0.45]} fontSize={0.18} color="#64748b" anchorX="center" outlineWidth={0.01} outlineColor="#000000">
           Locked
@@ -105,29 +189,16 @@ export function CustomerTableComp({
 
   return (
     <group position={table.position}>
-      <mesh position={[0, 0.28, 0.45]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.45, 0.45, 0.05, 12]} />
-        <meshStandardMaterial color="#92400e" />
-      </mesh>
-      <mesh position={[0, 0.13, 0.45]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.25, 8]} />
-        <meshStandardMaterial color="#78350f" />
-      </mesh>
-      <mesh position={[0, 0.0, 0.45]}>
-        <cylinderGeometry args={[0.25, 0.25, 0.02, 8]} />
-        <meshStandardMaterial color="#78350f" />
-      </mesh>
+      <DiningTable />
 
-      <mesh position={[0, 0.15, 0]} castShadow>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial color="#78350f" />
-      </mesh>
+      <Chair position={[-0.55, 0, 0.45]} rotation={Math.PI / 2} />
+      <Chair position={[0.55, 0, 0.45]} rotation={-Math.PI / 2} />
 
       <CustomerModel table={table} />
 
       {isNear && carrying === "pizza_ready" && table.hasCustomer && (
         <Text
-          position={[0, 2.0, 0.45]}
+          position={[0, 1.8, 0.45]}
           fontSize={0.18}
           color="#22c55e"
           anchorX="center"
@@ -140,8 +211,8 @@ export function CustomerTableComp({
 
       <Text
         position={[0, -0.15, 0.45]}
-        fontSize={0.12}
-        color="#a1a1aa"
+        fontSize={0.11}
+        color="#78716c"
         anchorX="center"
         outlineWidth={0.01}
         outlineColor="#000000"

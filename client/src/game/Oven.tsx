@@ -20,7 +20,7 @@ function OvenProgressBar({ progress, maxTime }: { progress: number; maxTime: num
   });
 
   return (
-    <group position={[0, 1.8, 0]}>
+    <group position={[0, 2.0, 0]}>
       <mesh>
         <boxGeometry args={[0.8, 0.1, 0.05]} />
         <meshStandardMaterial color="#334155" />
@@ -70,41 +70,63 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
 
   return (
     <group position={OVEN_POS}>
-      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 0.9, 1.0]} />
-        <meshStandardMaterial color="#78350f" />
+      <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.4, 1.0, 1.2]} />
+        <meshStandardMaterial color="#8b3a3a" />
       </mesh>
 
-      <mesh position={[0, 0.45, 0.51]} castShadow>
-        <boxGeometry args={[0.8, 0.6, 0.02]} />
-        <meshStandardMaterial color="#292524" />
+      <mesh position={[0, 0.5, -0.02]} castShadow>
+        <boxGeometry args={[1.3, 0.9, 1.15]} />
+        <meshStandardMaterial color="#a0522d" />
       </mesh>
 
-      <mesh position={[0, 0.45, 0.53]}>
-        <boxGeometry args={[0.6, 0.4, 0.01]} />
+      {[[-0.55, 0.2], [-0.55, 0.8], [0.55, 0.2], [0.55, 0.8], [-0.55, 0.5], [0.55, 0.5]].map(([x, y], i) => (
+        <mesh key={i} position={[x as number, y as number, 0.61]}>
+          <boxGeometry args={[0.12, 0.12, 0.02]} />
+          <meshStandardMaterial color="#7a3030" />
+        </mesh>
+      ))}
+
+      <mesh position={[0, 0.5, 0.61]} castShadow>
+        <boxGeometry args={[0.85, 0.65, 0.03]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+
+      <mesh position={[0, 0.5, 0.63]}>
+        <boxGeometry args={[0.7, 0.5, 0.01]} />
         <meshStandardMaterial
           color={glowColor}
           emissive={glowColor}
-          emissiveIntensity={oven.isCooking ? 0.8 : oven.pizzaReady ? 0.5 : 0.1}
+          emissiveIntensity={oven.isCooking ? 1.0 : oven.pizzaReady ? 0.5 : 0.05}
           transparent
-          opacity={0.7}
+          opacity={0.8}
         />
       </mesh>
 
-      <mesh position={[0.5, 0.92, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.15, 6]} />
-        <meshStandardMaterial color="#525252" />
+      <mesh position={[0.3, 0.85, 0.62]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.08, 6]} />
+        <meshStandardMaterial color="#525252" metalness={0.6} />
+      </mesh>
+
+      <mesh position={[0, 1.05, 0]}>
+        <boxGeometry args={[1.5, 0.08, 1.3]} />
+        <meshStandardMaterial color="#7a3030" />
+      </mesh>
+
+      <mesh position={[0.1, 1.35, -0.3]} castShadow>
+        <cylinderGeometry args={[0.1, 0.12, 0.5, 8]} />
+        <meshStandardMaterial color="#5a5a5a" />
+      </mesh>
+      <mesh position={[0.1, 1.62, -0.3]}>
+        <cylinderGeometry args={[0.12, 0.1, 0.05, 8]} />
+        <meshStandardMaterial color="#4a4a4a" />
       </mesh>
 
       {oven.isCooking && (
         <>
-          <mesh position={[0, 0.45, 0.2]}>
-            <cylinderGeometry args={[0.15, 0.15, 0.05, 8]} />
-            <meshStandardMaterial color="#f5deb3" />
-          </mesh>
           <OvenProgressBar progress={oven.cookProgress} maxTime={ovenCookTime} />
           <Text
-            position={[0, 2.1, 0]}
+            position={[0, 2.3, 0]}
             fontSize={0.18}
             color="#f97316"
             anchorX="center"
@@ -118,12 +140,12 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
 
       {oven.pizzaReady && (
         <>
-          <mesh position={[0, 0.95, 0.2]} castShadow>
+          <mesh position={[0, 1.12, 0.2]} castShadow>
             <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
             <meshStandardMaterial color="#e8a849" />
           </mesh>
           <Text
-            position={[0, 2.1, 0]}
+            position={[0, 2.3, 0]}
             fontSize={0.2}
             color="#22c55e"
             anchorX="center"
@@ -132,13 +154,13 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
           >
             Pizza Ready!
           </Text>
-          <pointLight position={[0, 1.2, 0]} intensity={1.5} color="#22c55e" distance={2.5} />
+          <pointLight position={[0, 1.3, 0]} intensity={1.5} color="#22c55e" distance={2.5} />
         </>
       )}
 
       {!oven.isCooking && !oven.pizzaReady && isNear && carrying === "dough" && (
         <Text
-          position={[0, 2.1, 0]}
+          position={[0, 2.3, 0]}
           fontSize={0.18}
           color="#60a5fa"
           anchorX="center"
@@ -150,21 +172,22 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
       )}
 
       <Text
-        position={[0, 1.4, 0.55]}
-        fontSize={0.16}
+        position={[0, 1.55, 0.62]}
+        fontSize={0.14}
         color="#fbbf24"
         anchorX="center"
         outlineWidth={0.01}
         outlineColor="#000000"
+        fontWeight="bold"
       >
-        OVEN
+        PIZZA OVEN
       </Text>
 
       <pointLight
-        position={[0, 0.5, 0.6]}
-        intensity={oven.isCooking ? 3 : 0.5}
+        position={[0, 0.5, 0.8]}
+        intensity={oven.isCooking ? 4 : 0.3}
         color="#f97316"
-        distance={2}
+        distance={2.5}
       />
     </group>
   );

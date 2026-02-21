@@ -1,54 +1,227 @@
 import { Text } from "@react-three/drei";
 
-function Plant({ position }: { position: [number, number, number] }) {
+function KitchenShelf({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.2, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.2, 0.4, 8]} />
-        <meshStandardMaterial color="#78350f" />
+      <mesh position={[0, 0, 0.05]}>
+        <boxGeometry args={[1.8, 0.06, 0.3]} />
+        <meshStandardMaterial color="#8b6914" />
       </mesh>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <sphereGeometry args={[0.25, 8, 8]} />
+      <mesh position={[-0.85, -0.15, 0.15]}>
+        <boxGeometry args={[0.06, 0.3, 0.06]} />
+        <meshStandardMaterial color="#6b5210" />
+      </mesh>
+      <mesh position={[0.85, -0.15, 0.15]}>
+        <boxGeometry args={[0.06, 0.3, 0.06]} />
+        <meshStandardMaterial color="#6b5210" />
+      </mesh>
+      <mesh position={[-0.5, 0.08, 0.05]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.12, 8]} />
+        <meshStandardMaterial color="#dc2626" />
+      </mesh>
+      <mesh position={[-0.2, 0.08, 0.05]}>
+        <cylinderGeometry args={[0.05, 0.05, 0.14, 8]} />
         <meshStandardMaterial color="#16a34a" />
+      </mesh>
+      <mesh position={[0.1, 0.08, 0.05]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.1, 8]} />
+        <meshStandardMaterial color="#eab308" />
+      </mesh>
+      <mesh position={[0.4, 0.06, 0.05]}>
+        <boxGeometry args={[0.12, 0.15, 0.08]} />
+        <meshStandardMaterial color="#f5f5dc" />
+      </mesh>
+      <mesh position={[0.6, 0.06, 0.05]}>
+        <boxGeometry args={[0.1, 0.12, 0.08]} />
+        <meshStandardMaterial color="#d4a574" />
       </mesh>
     </group>
   );
 }
 
-function PizzaSign({ position }: { position: [number, number, number] }) {
+function MenuBoard({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 1.5, 0]}>
-        <boxGeometry args={[0.08, 1.5, 0.08]} />
-        <meshStandardMaterial color="#78350f" />
+      <mesh>
+        <boxGeometry args={[2.0, 1.2, 0.08]} />
+        <meshStandardMaterial color="#1a1a2e" />
       </mesh>
-      <mesh position={[0, 2.3, 0]}>
-        <boxGeometry args={[1.5, 0.6, 0.05]} />
-        <meshStandardMaterial color="#7c2d12" />
+      <mesh position={[0, 0, 0.01]}>
+        <boxGeometry args={[1.85, 1.05, 0.02]} />
+        <meshStandardMaterial color="#16213e" />
       </mesh>
-      <Text
-        position={[0, 2.35, 0.04]}
-        fontSize={0.22}
-        color="#fbbf24"
-        anchorX="center"
-        fontWeight="bold"
-      >
+      <mesh position={[-0.95, 0.65, 0]}>
+        <boxGeometry args={[0.06, 0.15, 0.06]} />
+        <meshStandardMaterial color="#8b6914" />
+      </mesh>
+      <mesh position={[0.95, 0.65, 0]}>
+        <boxGeometry args={[0.06, 0.15, 0.06]} />
+        <meshStandardMaterial color="#8b6914" />
+      </mesh>
+      <Text position={[0, 0.3, 0.05]} fontSize={0.2} color="#fbbf24" anchorX="center" fontWeight="bold">
         PIZZA FACTORY
+      </Text>
+      <Text position={[0, 0.05, 0.05]} fontSize={0.1} color="#94a3b8" anchorX="center">
+        Fresh & Hot!
+      </Text>
+      <Text position={[-0.5, -0.15, 0.05]} fontSize={0.08} color="#f97316" anchorX="center">
+        Margherita
+      </Text>
+      <Text position={[0.3, -0.15, 0.05]} fontSize={0.08} color="#f97316" anchorX="center">
+        Pepperoni
+      </Text>
+      <Text position={[-0.5, -0.3, 0.05]} fontSize={0.08} color="#f97316" anchorX="center">
+        Supreme
+      </Text>
+      <Text position={[0.3, -0.3, 0.05]} fontSize={0.08} color="#f97316" anchorX="center">
+        Hawaiian
       </Text>
     </group>
   );
 }
 
-function FloorArrow({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+function KitchenCounter({ position, width }: { position: [number, number, number]; width: number }) {
   return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <planeGeometry args={[0.3, 0.8]} />
-        <meshStandardMaterial color="#fbbf24" opacity={0.3} transparent />
+    <group position={position}>
+      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.06, 0.8]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -0.5]}>
-        <coneGeometry args={[0.25, 0.3, 3]} />
-        <meshStandardMaterial color="#fbbf24" opacity={0.3} transparent />
+      <mesh position={[0, 0.2, 0]}>
+        <boxGeometry args={[width, 0.42, 0.75]} />
+        <meshStandardMaterial color="#f5f5f4" />
+      </mesh>
+      <mesh position={[0, 0.2, 0.38]}>
+        <boxGeometry args={[width, 0.42, 0.02]} />
+        <meshStandardMaterial color="#e7e5e4" />
+      </mesh>
+    </group>
+  );
+}
+
+function ServingWindow({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.8, 0]}>
+        <boxGeometry args={[3.5, 0.12, 0.6]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
+      </mesh>
+      <mesh position={[-1.8, 1.4, 0]}>
+        <boxGeometry args={[0.08, 1.3, 0.5]} />
+        <meshStandardMaterial color="#a1a1aa" />
+      </mesh>
+      <mesh position={[1.8, 1.4, 0]}>
+        <boxGeometry args={[0.08, 1.3, 0.5]} />
+        <meshStandardMaterial color="#a1a1aa" />
+      </mesh>
+      <mesh position={[0, 2.05, 0]}>
+        <boxGeometry args={[3.68, 0.08, 0.5]} />
+        <meshStandardMaterial color="#a1a1aa" />
+      </mesh>
+
+      <mesh position={[0, 2.15, 0]}>
+        <boxGeometry args={[2.5, 0.15, 0.08]} />
+        <meshStandardMaterial color="#dc2626" />
+      </mesh>
+      <Text position={[0, 2.15, 0.05]} fontSize={0.09} color="#ffffff" anchorX="center" fontWeight="bold">
+        ORDER UP!
+      </Text>
+    </group>
+  );
+}
+
+function HangingLight({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.01, 0.01, 0.4, 6]} />
+        <meshStandardMaterial color="#333333" />
+      </mesh>
+      <mesh position={[0, -0.25, 0]}>
+        <coneGeometry args={[0.2, 0.15, 8]} />
+        <meshStandardMaterial color="#d97706" metalness={0.4} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, -0.35, 0]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color="#fef3c7" emissive="#fbbf24" emissiveIntensity={0.8} />
+      </mesh>
+      <pointLight position={[0, -0.35, 0]} intensity={0.6} color="#fbbf24" distance={4} />
+    </group>
+  );
+}
+
+function WallDecor({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh>
+        <boxGeometry args={[0.8, 0.8, 0.04]} />
+        <meshStandardMaterial color="#3c1a00" />
+      </mesh>
+      <mesh position={[0, 0, 0.03]}>
+        <boxGeometry args={[0.65, 0.65, 0.02]} />
+        <meshStandardMaterial color="#fef3c7" />
+      </mesh>
+      <mesh position={[0, 0.05, 0.05]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.03, 8]} />
+        <meshStandardMaterial color="#e8a849" />
+      </mesh>
+      <mesh position={[0.05, 0.09, 0.06]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+      <mesh position={[-0.06, 0.09, 0.06]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#22c55e" />
+      </mesh>
+    </group>
+  );
+}
+
+function Fridge({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 1, 0]} castShadow>
+        <boxGeometry args={[0.7, 2, 0.65]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.4} roughness={0.3} />
+      </mesh>
+      <mesh position={[0.25, 1.3, 0.33]}>
+        <boxGeometry args={[0.04, 0.3, 0.04]} />
+        <meshStandardMaterial color="#737373" />
+      </mesh>
+      <mesh position={[0.25, 0.5, 0.33]}>
+        <boxGeometry args={[0.04, 0.25, 0.04]} />
+        <meshStandardMaterial color="#737373" />
+      </mesh>
+      <mesh position={[0, 0.85, 0.33]}>
+        <boxGeometry args={[0.65, 0.02, 0.02]} />
+        <meshStandardMaterial color="#a1a1aa" />
+      </mesh>
+    </group>
+  );
+}
+
+function Sink({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.42, 0]} castShadow>
+        <boxGeometry args={[0.8, 0.06, 0.6]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.2, 0]}>
+        <boxGeometry args={[0.75, 0.38, 0.55]} />
+        <meshStandardMaterial color="#f5f5f4" />
+      </mesh>
+      <mesh position={[0, 0.38, 0]}>
+        <boxGeometry args={[0.5, 0.15, 0.4]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.55, -0.15]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.2, 6]} />
+        <meshStandardMaterial color="#737373" metalness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.65, -0.1]}>
+        <sphereGeometry args={[0.04, 6, 6]} />
+        <meshStandardMaterial color="#737373" metalness={0.6} />
       </mesh>
     </group>
   );
@@ -57,16 +230,36 @@ function FloorArrow({ position, rotation }: { position: [number, number, number]
 export function OfficeFurniture() {
   return (
     <group>
-      <Plant position={[-2, 0, -7.5]} />
-      <Plant position={[-2, 0, 5.5]} />
-      <Plant position={[17.5, 0, -7.5]} />
-      <Plant position={[17.5, 0, 5.5]} />
+      <KitchenShelf position={[-2.7, 1.8, -5]} />
+      <KitchenShelf position={[-2.7, 2.3, -5]} />
+      <KitchenShelf position={[-2.7, 1.8, 0]} />
 
-      <PizzaSign position={[8, 0, 6.5]} />
+      <MenuBoard position={[8, 2.0, -8.7]} />
 
-      <FloorArrow position={[2, 0, -2]} rotation={0} />
-      <FloorArrow position={[2, 0, 1.5]} rotation={Math.PI} />
-      <FloorArrow position={[8, 0, 0]} rotation={Math.PI / 2} />
+      <ServingWindow position={[8.5, 0, -2]} />
+
+      <KitchenCounter position={[-1.5, 0, -5.5]} width={2.5} />
+      <KitchenCounter position={[-1.5, 0, 4]} width={2.5} />
+
+      <Fridge position={[-2.3, 0, -7.5]} />
+      <Fridge position={[-2.3, 0, 5]} />
+      <Sink position={[-1.5, 0, -0.5]} />
+
+      <HangingLight position={[12, 2.8, 2]} />
+      <HangingLight position={[14, 2.8, 0]} />
+      <HangingLight position={[16, 2.8, -3]} />
+      <HangingLight position={[12, 2.8, -5]} />
+
+      <WallDecor position={[18.8, 1.8, -5]} />
+      <WallDecor position={[18.8, 1.8, 2]} />
+
+      <mesh position={[18.8, 1.5, -1.5]} rotation={[0, -Math.PI / 2, 0]}>
+        <boxGeometry args={[1.2, 0.8, 0.04]} />
+        <meshStandardMaterial color="#3c1a00" />
+      </mesh>
+      <Text position={[18.75, 1.5, -1.5]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.12} color="#fef3c7" anchorX="center">
+        {"Buon Appetito!"}
+      </Text>
     </group>
   );
 }

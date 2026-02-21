@@ -4,13 +4,6 @@ import { useKeyboardControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useOfficeGame, ItemType } from "../lib/stores/useOfficeGame";
 
-const ITEM_COLORS: Record<ItemType, string> = {
-  none: "#000000",
-  dough: "#f5deb3",
-  pizza_raw: "#e8a849",
-  pizza_ready: "#d4740a",
-};
-
 const ITEM_LABELS: Record<ItemType, string> = {
   none: "",
   dough: "Dough",
@@ -52,76 +45,118 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
 
   return (
     <group ref={groupRef} position={[5, 0, 0]}>
-      <mesh position={[0, 0.25, 0]} castShadow>
-        <cylinderGeometry args={[0.25, 0.3, 0.5, 8]} />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+
+      <mesh position={[0, 0.38, 0]} castShadow>
+        <cylinderGeometry args={[0.22, 0.15, 0.25, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+
+      <mesh position={[0, 0.58, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.22, 0.2, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+
+      <mesh position={[0, 0.42, 0.18]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0, 0.48, 0.18]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0, 0.54, 0.18]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+
+      <mesh position={[0, 0.55, 0.16]}>
+        <boxGeometry args={[0.15, 0.04, 0.02]} />
         <meshStandardMaterial color="#dc2626" />
       </mesh>
 
-      <mesh position={[0, 0.65, 0]} castShadow>
-        <cylinderGeometry args={[0.2, 0.25, 0.4, 8]} />
-        <meshStandardMaterial color="#ef4444" />
+      <mesh position={[0, 0.78, 0]} castShadow>
+        <sphereGeometry args={[0.16, 8, 8]} />
+        <meshStandardMaterial color="#deb887" />
       </mesh>
 
+      <mesh position={[0, 0.95, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
       <mesh position={[0, 1.0, 0]} castShadow>
-        <sphereGeometry args={[0.2, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" />
-      </mesh>
-
-      <mesh position={[0, 1.22, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.22, 0.06, 8]} />
+        <cylinderGeometry args={[0.2, 0.18, 0.06, 8]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
-      <mesh position={[0, 1.28, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.22, 0.08, 8]} />
+      <mesh position={[0, 1.05, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.2, 0.06, 8]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
 
-      <mesh position={[0.07, 1.04, 0.15]}>
-        <sphereGeometry args={[0.03, 6, 6]} />
+      <mesh position={[0.06, 0.82, 0.13]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
         <meshStandardMaterial color="#1e293b" />
       </mesh>
-      <mesh position={[-0.07, 1.04, 0.15]}>
-        <sphereGeometry args={[0.03, 6, 6]} />
+      <mesh position={[-0.06, 0.82, 0.13]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
         <meshStandardMaterial color="#1e293b" />
+      </mesh>
+
+      <mesh position={[0, 0.73, 0.13]}>
+        <boxGeometry args={[0.06, 0.02, 0.02]} />
+        <meshStandardMaterial color="#a0522d" />
       </mesh>
 
       {carrying !== "none" && (
         <group>
           {Array.from({ length: carryCount }).map((_, i) => (
-            <group key={i} position={[0, 1.35 + i * 0.12, -0.2]}>
+            <group key={i} position={[0, 1.15 + i * 0.12, -0.2]}>
               {carrying === "dough" && (
                 <mesh castShadow>
-                  <sphereGeometry args={[0.15, 8, 8]} />
+                  <sphereGeometry args={[0.12, 8, 8]} />
                   <meshStandardMaterial color="#f5deb3" />
                 </mesh>
               )}
               {carrying === "pizza_raw" && (
-                <mesh castShadow>
-                  <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
-                  <meshStandardMaterial color="#e8a849" />
-                </mesh>
+                <group>
+                  <mesh castShadow>
+                    <cylinderGeometry args={[0.15, 0.15, 0.04, 8]} />
+                    <meshStandardMaterial color="#e8a849" />
+                  </mesh>
+                  <mesh position={[0, 0.03, 0]}>
+                    <cylinderGeometry args={[0.13, 0.13, 0.02, 8]} />
+                    <meshStandardMaterial color="#dc2626" opacity={0.7} transparent />
+                  </mesh>
+                </group>
               )}
               {carrying === "pizza_ready" && (
                 <group>
                   <mesh castShadow>
-                    <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
+                    <cylinderGeometry args={[0.15, 0.15, 0.04, 8]} />
                     <meshStandardMaterial color="#d4740a" />
                   </mesh>
-                  <mesh position={[0.05, 0.04, 0.03]}>
-                    <sphereGeometry args={[0.03, 6, 6]} />
+                  <mesh position={[0.04, 0.03, 0.02]}>
+                    <sphereGeometry args={[0.025, 6, 6]} />
                     <meshStandardMaterial color="#ef4444" />
                   </mesh>
-                  <mesh position={[-0.06, 0.04, -0.04]}>
-                    <sphereGeometry args={[0.03, 6, 6]} />
+                  <mesh position={[-0.05, 0.03, -0.03]}>
+                    <sphereGeometry args={[0.025, 6, 6]} />
                     <meshStandardMaterial color="#22c55e" />
+                  </mesh>
+                  <mesh position={[0.01, 0.03, -0.05]}>
+                    <sphereGeometry args={[0.02, 6, 6]} />
+                    <meshStandardMaterial color="#fbbf24" />
                   </mesh>
                 </group>
               )}
             </group>
           ))}
           <Text
-            position={[0, 1.6 + (carryCount - 1) * 0.12, 0]}
-            fontSize={0.18}
+            position={[0, 1.35 + (carryCount - 1) * 0.12, 0]}
+            fontSize={0.16}
             color={carrying === "pizza_ready" ? "#22c55e" : "#fbbf24"}
             anchorX="center"
             outlineWidth={0.02}
