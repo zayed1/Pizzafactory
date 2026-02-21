@@ -9,9 +9,10 @@ const INTERACT_DISTANCE = 2.0;
 
 function MixerBowl() {
   const bladeRef = useRef<THREE.Group>(null);
+  const phase = useOfficeGame((s) => s.phase);
 
   useFrame((_, delta) => {
-    if (bladeRef.current) {
+    if (bladeRef.current && phase === "playing") {
       bladeRef.current.rotation.y += delta * 3;
     }
   });
@@ -47,11 +48,12 @@ export function DoughMaker({ playerRef }: { playerRef: React.RefObject<THREE.Gro
   const spawnDough = useOfficeGame((s) => s.spawnDough);
   const carrying = useOfficeGame((s) => s.carrying);
   const doughSpawnInterval = useOfficeGame((s) => s.doughSpawnInterval);
+  const phase = useOfficeGame((s) => s.phase);
   const [isNear, setIsNear] = useState(false);
   const spawnTimer = useRef(0);
 
   useFrame((_, delta) => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || phase !== "playing") return;
 
     const playerPos = playerRef.current.position;
     const dist = Math.sqrt(

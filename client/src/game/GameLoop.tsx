@@ -7,9 +7,12 @@ export function GameLoop() {
   const updateCustomerTimers = useOfficeGame((s) => s.updateCustomerTimers);
   const updateStreak = useOfficeGame((s) => s.updateStreak);
   const customerSpawnInterval = useOfficeGame((s) => s.customerSpawnInterval);
+  const phase = useOfficeGame((s) => s.phase);
   const customerTimer = useRef(0);
 
   useFrame((_, delta) => {
+    if (phase !== "playing") return;
+
     updateCustomerTimers(delta);
     updateStreak(delta);
 

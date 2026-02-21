@@ -39,13 +39,14 @@ function SingleOven({ ovenId, playerRef }: { ovenId: number; playerRef: React.Re
   const pickupFromOven = useOfficeGame((s) => s.pickupFromOven);
   const updateOven = useOfficeGame((s) => s.updateOven);
   const ovenCookTime = useOfficeGame((s) => s.ovenCookTime);
+  const phase = useOfficeGame((s) => s.phase);
   const [isNear, setIsNear] = useState(false);
 
   const oven = ovens[ovenId];
   const pos = OVEN_POSITIONS[ovenId];
 
   useFrame((_, delta) => {
-    if (!playerRef.current || !oven) return;
+    if (!playerRef.current || !oven || phase !== "playing") return;
 
     const playerPos = playerRef.current.position;
     const dist = Math.sqrt(

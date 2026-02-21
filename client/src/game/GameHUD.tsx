@@ -12,11 +12,17 @@ export function GameHUD() {
   const prepEmployees = useOfficeGame((s) => s.prepEmployees);
   const ovens = useOfficeGame((s) => s.ovens);
   const streak = useOfficeGame((s) => s.streak);
+  const bestStreak = useOfficeGame((s) => s.bestStreak);
   const gameLevel = useOfficeGame((s) => s.gameLevel);
   const levelProgress = useOfficeGame((s) => s.levelProgress);
   const pizzasForNextLevel = useOfficeGame((s) => s.pizzasForNextLevel);
+  const totalMoneyEarned = useOfficeGame((s) => s.totalMoneyEarned);
+  const gameStartTime = useOfficeGame((s) => s.gameStartTime);
   const unlockedTables = tables.filter((t) => t.unlocked).length;
   const totalTables = tables.length;
+
+  const elapsed = gameStartTime > 0 ? Math.max(1, Math.floor((Date.now() - gameStartTime) / 60000)) : 1;
+  const earningsPerMin = Math.round(totalMoneyEarned / elapsed);
 
   const carryLabel =
     carrying === "none" ? "Empty" :
@@ -132,6 +138,10 @@ export function GameHUD() {
             <span style={{ color: "#22c55e" }}>Served: {totalPizzasServed}</span>
             <span style={{ color: "#ef4444" }}>Missed: {missedCustomers}</span>
           </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 2 }}>
+            <span style={{ color: "#06b6d4" }}>${earningsPerMin}/min</span>
+            <span style={{ color: "#f97316" }}>Best: x{bestStreak}</span>
+          </div>
         </div>
 
         <div
@@ -189,6 +199,7 @@ export function GameHUD() {
         <div>3. Take pizza to prep</div>
         <div>4. Deliver to customer</div>
         <div style={{ marginTop: 4, color: "#f97316", fontSize: 11 }}>Serve fast for streak bonus!</div>
+        <div style={{ color: "#a855f7", fontSize: 11 }}>ESC - Pause & Stats</div>
       </div>
 
       <div
@@ -240,6 +251,15 @@ export function GameHUD() {
           cost={upgrades.doughSpeed.cost}
           money={money}
           onClick={() => buyUpgrade("doughSpeed")}
+        />
+        <UpgradeButton
+          label="Prep"
+          icon="\u2702\uFE0F"
+          level={upgrades.prepSpeed.level}
+          maxLevel={upgrades.prepSpeed.maxLevel}
+          cost={upgrades.prepSpeed.cost}
+          money={money}
+          onClick={() => buyUpgrade("prepSpeed")}
         />
         {ovens.length < 3 && (
           <UpgradeButton

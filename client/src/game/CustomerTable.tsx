@@ -78,27 +78,37 @@ function DiningTable() {
   );
 }
 
+function getMoodEmoji(patienceRatio: number): string {
+  if (patienceRatio > 0.7) return "😊";
+  if (patienceRatio > 0.4) return "😐";
+  if (patienceRatio > 0.2) return "😟";
+  return "😠";
+}
+
 function CustomerModel({ table }: { table: CustomerTableType }) {
   if (!table.hasCustomer) return null;
 
   const patienceRatio = 1 - table.customerTimer / table.customerMaxTime;
   const color = patienceRatio > 0.5 ? "#22c55e" : patienceRatio > 0.25 ? "#f59e0b" : "#ef4444";
+  const bodyColor = table.customerColor || "#6b7280";
+  const hairColor = table.customerHairColor || "#4a3728";
+  const mood = getMoodEmoji(patienceRatio);
 
   return (
     <group position={[0, 0, 0.9]}>
       <mesh position={[0, 0.15, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
-        <meshStandardMaterial color="#4a5568" />
+        <meshStandardMaterial color="#1e293b" />
       </mesh>
 
       <mesh position={[0, 0.4, 0]} castShadow>
         <cylinderGeometry args={[0.16, 0.12, 0.25, 8]} />
-        <meshStandardMaterial color="#6b7280" />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
 
       <mesh position={[0, 0.62, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.16, 0.2, 8]} />
-        <meshStandardMaterial color="#6b7280" />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
 
       <mesh position={[0, 0.82, 0]} castShadow>
@@ -108,7 +118,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
 
       <mesh position={[0, 0.92, 0]} castShadow>
         <sphereGeometry args={[0.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#4a3728" />
+        <meshStandardMaterial color={hairColor} />
       </mesh>
 
       <mesh position={[0.04, 0.84, 0.1]}>
@@ -120,6 +130,31 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
         <meshStandardMaterial color="#1e293b" />
       </mesh>
 
+      {patienceRatio > 0.4 ? (
+        <mesh position={[0, 0.76, 0.11]}>
+          <boxGeometry args={[0.06, 0.015, 0.01]} />
+          <meshStandardMaterial color={patienceRatio > 0.7 ? "#22c55e" : "#f59e0b"} />
+        </mesh>
+      ) : (
+        <mesh position={[0, 0.76, 0.11]}>
+          <boxGeometry args={[0.06, 0.015, 0.01]} />
+          <meshStandardMaterial color="#ef4444" />
+        </mesh>
+      )}
+
+      {patienceRatio <= 0.25 && (
+        <>
+          <mesh position={[0.05, 0.86, 0.1]} rotation={[0, 0, -0.2]}>
+            <boxGeometry args={[0.04, 0.008, 0.008]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+          <mesh position={[-0.05, 0.86, 0.1]} rotation={[0, 0, 0.2]}>
+            <boxGeometry args={[0.04, 0.008, 0.008]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+        </>
+      )}
+
       <group position={[0, 1.2, 0]}>
         <mesh>
           <boxGeometry args={[0.5, 0.07, 0.05]} />
@@ -130,6 +165,14 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
           <meshStandardMaterial color={color} />
         </mesh>
       </group>
+
+      <Text
+        position={[0.32, 1.2, 0]}
+        fontSize={0.18}
+        anchorX="center"
+      >
+        {mood}
+      </Text>
 
       <Text
         position={[0, 1.45, 0]}

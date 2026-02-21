@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 export type GamePhase = "menu" | "playing" | "paused";
+export type CustomerMood = "happy" | "neutral" | "worried" | "angry";
 export type ItemType = "none" | "dough" | "pizza_raw" | "pizza_ready";
 
 export interface PrepEmployee {
@@ -20,6 +21,8 @@ export interface CustomerTable {
   customerTimer: number;
   customerMaxTime: number;
   served: boolean;
+  customerColor: string;
+  customerHairColor: string;
 }
 
 export interface OvenState {
@@ -44,6 +47,7 @@ interface PizzaGameState {
   totalMoneyEarned: number;
   totalPizzasServed: number;
   missedCustomers: number;
+  gameStartTime: number;
 
   carrying: ItemType;
   carryCount: number;
@@ -84,9 +88,11 @@ interface PizzaGameState {
     newTable: UpgradeInfo;
     doughSpeed: UpgradeInfo;
     newOven: UpgradeInfo;
+    prepSpeed: UpgradeInfo;
   };
 
   startGame: () => void;
+  togglePause: () => void;
 
   pickupDough: () => boolean;
   placeDoughInOven: (ovenId: number) => boolean;
@@ -120,6 +126,9 @@ export const OVEN_POSITIONS: [number, number, number][] = [
   [1, 0, 5.2],
 ];
 
+const CUSTOMER_COLORS = ["#6b7280", "#4a5568", "#7c3aed", "#2563eb", "#dc2626", "#059669", "#d97706", "#ec4899"];
+const HAIR_COLORS = ["#4a3728", "#1a1a1a", "#8b4513", "#d4a373", "#ef4444", "#fbbf24"];
+
 function createTables(): CustomerTable[] {
   return TABLE_POSITIONS.map((pos, i) => ({
     id: i,
@@ -129,6 +138,8 @@ function createTables(): CustomerTable[] {
     customerTimer: 0,
     customerMaxTime: 15,
     served: false,
+    customerColor: CUSTOMER_COLORS[0],
+    customerHairColor: HAIR_COLORS[0],
   }));
 }
 
@@ -151,6 +162,7 @@ export const useOfficeGame = create<PizzaGameState>()(
     totalMoneyEarned: 0,
     totalPizzasServed: 0,
     missedCustomers: 0,
+    gameStartTime: 0,
 
     carrying: "none",
     carryCount: 0,
@@ -191,9 +203,16 @@ export const useOfficeGame = create<PizzaGameState>()(
       newTable: { level: 0, cost: 100, baseCost: 100, maxLevel: 5 },
       doughSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
       newOven: { level: 0, cost: 250, baseCost: 250, maxLevel: 2 },
+      prepSpeed: { level: 0, cost: 80, baseCost: 80, maxLevel: 8 },
     },
 
-    startGame: () => set({ phase: "playing" }),
+    startGame: () => set({ phase: "playing", gameStartTime: Date.now() }),
+
+    togglePause: () => {
+      const s = get();
+      if (s.phase === "playing") set({ phase: "paused" });
+      else if (s.phase === "paused") set({ phase: "playing" });
+    },
 
     pickupDough: () => {
       const s = get();
@@ -363,12 +382,16 @@ export const useOfficeGame = create<PizzaGameState>()(
       if (!emptyTable) return;
       const newTables = [...s.tables];
       const patience = Math.max(8, s.customerPatience - (s.gameLevel - 1) * 0.5);
+      const custColor = CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)];
+      const hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
       newTables[emptyTable.id] = {
         ...emptyTable,
         hasCustomer: true,
         customerTimer: 0,
         customerMaxTime: patience,
         served: false,
+        customerColor: custColor,
+        customerHairColor: hairColor,
       };
       set({ tables: newTables });
     },
@@ -461,6 +484,8 @@ export const useOfficeGame = create<PizzaGameState>()(
           pizzaCooling: 0,
         });
         updates.ovens = newOvens;
+      } else if (type === "prepSpeed") {
+        updates.prepWorkTime = Math.max(2, 6 - newLevel * 0.4);
       }
 
       set(updates);

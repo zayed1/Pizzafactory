@@ -141,11 +141,12 @@ export function PrepStation({
   const pickupFromPrep = useOfficeGame((s) => s.pickupFromPrep);
   const updatePrepEmployee = useOfficeGame((s) => s.updatePrepEmployee);
   const prepWorkTime = useOfficeGame((s) => s.prepWorkTime);
+  const phase = useOfficeGame((s) => s.phase);
   const pos = PREP_POSITIONS[index] || PREP_POSITIONS[0];
   const colors = ["#dc2626", "#2563eb", "#16a34a"];
 
   useFrame((_, delta) => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || phase !== "playing") return;
 
     const playerPos = playerRef.current.position;
     const dist = Math.sqrt(

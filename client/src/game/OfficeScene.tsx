@@ -12,6 +12,7 @@ import { GameLoop } from "./GameLoop";
 import { FloatingTextManager } from "./FloatingText";
 import { GuideArrows } from "./GuideArrows";
 import { SoundManager } from "./SoundManager";
+import { ParticleSystem } from "./Particles";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -60,6 +61,7 @@ export function OfficeScene() {
       <GuideArrows />
       <FloatingTextManager />
       <SoundManager />
+      <ParticleSystem />
       <GameLoop />
     </>
   );

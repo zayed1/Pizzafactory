@@ -6,6 +6,7 @@ import { useOfficeGame } from "./lib/stores/useOfficeGame";
 import { OfficeScene } from "./game/OfficeScene";
 import { GameHUD } from "./game/GameHUD";
 import { StartMenu } from "./game/StartMenu";
+import { PauseMenu } from "./game/PauseMenu";
 
 const keyMap = [
   { name: "forward", keys: ["KeyW", "ArrowUp"] },
@@ -45,6 +46,7 @@ function App() {
           </Suspense>
         </Canvas>
         <GameHUD />
+        <PauseMenu />
       </div>
     </KeyboardControls>
   );

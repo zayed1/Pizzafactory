@@ -14,17 +14,21 @@ const ITEM_LABELS: Record<ItemType, string> = {
 
 export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const groupRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Group>(null);
   const [, getKeys] = useKeyboardControls();
   const playerSpeed = useOfficeGame((s) => s.playerSpeed);
   const carrying = useOfficeGame((s) => s.carrying);
   const carryCount = useOfficeGame((s) => s.carryCount);
   const tables = useOfficeGame((s) => s.tables);
   const ovens = useOfficeGame((s) => s.ovens);
+  const phase = useOfficeGame((s) => s.phase);
+  const bobTimer = useRef(0);
+  const targetRotation = useRef(0);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
 
   useFrame((_, delta) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || phase !== "playing") return;
     const keys = getKeys() as any;
     const direction = new THREE.Vector3();
 
@@ -33,7 +37,9 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
     if (keys.left) direction.x -= 1;
     if (keys.right) direction.x += 1;
 
-    if (direction.length() > 0) {
+    const isMoving = direction.length() > 0;
+
+    if (isMoving) {
       direction.normalize();
       const currentX = groupRef.current.position.x;
       const currentZ = groupRef.current.position.z;
@@ -47,13 +53,31 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       groupRef.current.position.x = Math.max(-1.5, Math.min(18.5, resolvedX));
       groupRef.current.position.z = Math.max(-7.5, Math.min(6.5, resolvedZ));
 
-      const angle = Math.atan2(direction.x, direction.z);
-      groupRef.current.rotation.y = angle;
+      targetRotation.current = Math.atan2(direction.x, direction.z);
+
+      bobTimer.current += delta * playerSpeed * 1.5;
+    }
+
+    const currentRot = groupRef.current.rotation.y;
+    let diff = targetRotation.current - currentRot;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    groupRef.current.rotation.y += diff * Math.min(1, delta * 12);
+
+    if (bodyRef.current) {
+      if (isMoving) {
+        bodyRef.current.position.y = Math.sin(bobTimer.current * 2) * 0.04;
+        bodyRef.current.rotation.z = Math.sin(bobTimer.current) * 0.05;
+      } else {
+        bodyRef.current.position.y *= 0.9;
+        bodyRef.current.rotation.z *= 0.9;
+      }
     }
   });
 
   return (
     <group ref={groupRef} position={[5, 0, 0]}>
+      <group ref={bodyRef}>
       <mesh position={[0, 0.15, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
         <meshStandardMaterial color="#1e293b" />
@@ -175,6 +199,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
           </Text>
         </group>
       )}
+      </group>
     </group>
   );
 });
