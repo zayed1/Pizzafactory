@@ -27,8 +27,8 @@ function App() {
         <Canvas
           shadows
           camera={{
-            position: [7, 14, 14],
-            fov: 45,
+            position: [8, 16, 16],
+            fov: 40,
             near: 0.1,
             far: 100,
           }}
@@ -36,9 +36,10 @@ function App() {
             antialias: true,
             powerPreference: "default",
           }}
-          style={{ background: "#1a1a2e" }}
+          style={{ background: "#1a0f0a" }}
         >
-          <color attach="background" args={["#1a1a2e"]} />
+          <color attach="background" args={["#1a0f0a"]} />
+          <fog attach="fog" args={["#1a0f0a", 25, 40]} />
           <Suspense fallback={null}>
             <OfficeScene />
           </Suspense>

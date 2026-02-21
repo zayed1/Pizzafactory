@@ -1,10 +1,11 @@
-# Office Fever - 3D Browser Game
+# Pizza Factory - 3D Browser Game
 
 ## Overview
-A 3D browser-based idle/management game inspired by Office Fever. Built with React Three Fiber and Three.js. The player controls a boss character who collects papers from a printer, delivers them to employees, and collects earnings to upgrade their office.
+A 3D browser-based idle/management game inspired by Office Fever but themed as a pizza factory. The player controls a chef who picks up dough, bakes it in the oven, sends it to prep employees for toppings, and delivers finished pizzas to customers before their patience runs out.
 
 ## Recent Changes
-- 2026-02-21: Initial game implementation with core mechanics
+- 2026-02-21: Converted game from Office Fever to Pizza Factory with full pipeline mechanics
+- 2026-02-21: Initial project setup
 
 ## Project Architecture
 - **Frontend**: React + TypeScript + Vite
@@ -17,23 +18,46 @@ A 3D browser-based idle/management game inspired by Office Fever. Built with Rea
 - `client/src/App.tsx` - Main app with Canvas and game phases
 - `client/src/game/` - All game components
   - `OfficeScene.tsx` - Main 3D scene composition
-  - `Player.tsx` - Player character with WASD controls
-  - `Printer.tsx` - Paper printer station
-  - `Desk.tsx` - Employee desks with work progress
-  - `OfficeFoor.tsx` - Office floor and walls
+  - `Player.tsx` - Player character with WASD controls, carries items
+  - `DoughMaker.tsx` - Auto-produces dough (player picks up)
+  - `Oven.tsx` - Takes dough, cooks into pizza
+  - `PrepStation.tsx` - Employees prepare pizza with toppings
+  - `CustomerTable.tsx` - Customer tables with patience timers
+  - `GameLoop.tsx` - Spawns customers and updates timers
+  - `OfficeFoor.tsx` - Factory floor and walls
   - `OfficeFurniture.tsx` - Decorative furniture
-  - `GameHUD.tsx` - UI overlay (money, papers, upgrades)
+  - `GameHUD.tsx` - UI overlay (money, carrying, upgrades)
   - `StartMenu.tsx` - Start screen
 - `client/src/lib/stores/useOfficeGame.tsx` - Game state store
 
-### Game Mechanics
-- Collect papers from printer (auto-collect on proximity)
-- Deliver papers to employee desks (auto-deliver on proximity)
-- Employees work on papers and produce cash
-- Collect cash from desks (auto-collect on proximity)
-- Upgrade: speed, capacity, printer speed, unlock new desks
+### Game Flow
+1. Dough Maker produces dough automatically
+2. Player picks up dough (must have empty hands)
+3. Player places dough in Oven
+4. Oven cooks (timer) → pizza comes out
+5. Player picks up pizza from Oven
+6. Player delivers to Prep Station employee
+7. Employee prepares (longest step) → ready pizza
+8. Player picks up ready pizza
+9. Player delivers to Customer Table before timer expires
+10. Customer pays → money earned
+
+### Key Rules
+- Player can only carry ONE type of item at a time
+- Stations only accept correct item type
+- Customers leave if not served in time (missed)
+- Later upgrade allows carrying 2+ items
+
+### Upgrades
+- Speed: Player movement speed
+- Capacity: Can carry more items (unlocks at $200)
+- Oven Speed: Faster cooking
+- Dough Speed: Faster dough production
+- Prep Employee: Add more prep workers (up to 3)
+- New Table: Unlock customer tables (up to 6)
 
 ## User Preferences
 - Arabic-speaking user
-- Interested in mobile game style (Office Fever)
+- Interested in mobile game style (Office Fever → Pizza Factory)
 - Prefers MVP-first approach
+- Detailed game design with progression system

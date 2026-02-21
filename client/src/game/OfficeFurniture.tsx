@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Text } from "@react-three/drei";
 
 function Plant({ position }: { position: [number, number, number] }) {
   return (
@@ -11,55 +11,44 @@ function Plant({ position }: { position: [number, number, number] }) {
         <sphereGeometry args={[0.25, 8, 8]} />
         <meshStandardMaterial color="#16a34a" />
       </mesh>
-      <mesh position={[0.1, 0.8, 0.05]} castShadow>
-        <sphereGeometry args={[0.15, 6, 6]} />
-        <meshStandardMaterial color="#22c55e" />
-      </mesh>
     </group>
   );
 }
 
-function WaterCooler({ position }: { position: [number, number, number] }) {
+function PizzaSign({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.4, 1.0, 0.4]} />
-        <meshStandardMaterial color="#e2e8f0" />
+      <mesh position={[0, 1.5, 0]}>
+        <boxGeometry args={[0.08, 1.5, 0.08]} />
+        <meshStandardMaterial color="#78350f" />
       </mesh>
-      <mesh position={[0, 1.15, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.18, 0.4, 8]} />
-        <meshStandardMaterial color="#60a5fa" transparent opacity={0.6} />
+      <mesh position={[0, 2.3, 0]}>
+        <boxGeometry args={[1.5, 0.6, 0.05]} />
+        <meshStandardMaterial color="#7c2d12" />
       </mesh>
+      <Text
+        position={[0, 2.35, 0.04]}
+        fontSize={0.22}
+        color="#fbbf24"
+        anchorX="center"
+        fontWeight="bold"
+      >
+        PIZZA FACTORY
+      </Text>
     </group>
   );
 }
 
-function Bookshelf({ position }: { position: [number, number, number] }) {
+function FloorArrow({ position, rotation }: { position: [number, number, number]; rotation: number }) {
   return (
-    <group position={position}>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <boxGeometry args={[1.0, 1.2, 0.3]} />
-        <meshStandardMaterial color="#92400e" />
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+        <planeGeometry args={[0.3, 0.8]} />
+        <meshStandardMaterial color="#fbbf24" opacity={0.3} transparent />
       </mesh>
-      <mesh position={[-0.25, 0.85, 0.1]}>
-        <boxGeometry args={[0.15, 0.25, 0.15]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-      <mesh position={[0, 0.85, 0.1]}>
-        <boxGeometry args={[0.15, 0.3, 0.15]} />
-        <meshStandardMaterial color="#3b82f6" />
-      </mesh>
-      <mesh position={[0.25, 0.85, 0.1]}>
-        <boxGeometry args={[0.15, 0.2, 0.15]} />
-        <meshStandardMaterial color="#22c55e" />
-      </mesh>
-      <mesh position={[-0.15, 0.35, 0.1]}>
-        <boxGeometry args={[0.15, 0.25, 0.15]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
-      <mesh position={[0.15, 0.35, 0.1]}>
-        <boxGeometry args={[0.15, 0.28, 0.15]} />
-        <meshStandardMaterial color="#8b5cf6" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -0.5]}>
+        <coneGeometry args={[0.25, 0.3, 3]} />
+        <meshStandardMaterial color="#fbbf24" opacity={0.3} transparent />
       </mesh>
     </group>
   );
@@ -68,12 +57,16 @@ function Bookshelf({ position }: { position: [number, number, number] }) {
 export function OfficeFurniture() {
   return (
     <group>
-      <Plant position={[-1.3, 0, -5.5]} />
-      <Plant position={[-1.3, 0, 5.5]} />
-      <Plant position={[15, 0, -5.5]} />
-      <Plant position={[15, 0, 5.5]} />
-      <WaterCooler position={[2, 0, -5.5]} />
-      <Bookshelf position={[14.5, 0, 0]} />
+      <Plant position={[-2, 0, -7.5]} />
+      <Plant position={[-2, 0, 5.5]} />
+      <Plant position={[17.5, 0, -7.5]} />
+      <Plant position={[17.5, 0, 5.5]} />
+
+      <PizzaSign position={[8, 0, 6.5]} />
+
+      <FloorArrow position={[2, 0, -2]} rotation={0} />
+      <FloorArrow position={[2, 0, 1.5]} rotation={Math.PI} />
+      <FloorArrow position={[8, 0, 0]} rotation={Math.PI / 2} />
     </group>
   );
 }
