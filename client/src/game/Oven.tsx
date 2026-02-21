@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useOfficeGame } from "../lib/stores/useOfficeGame";
+import { useOfficeGame, OVEN_POSITIONS } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
 
-const OVEN_POS: [number, number, number] = [1, 0, 2];
 const INTERACT_DISTANCE = 2.0;
 
 function OvenProgressBar({ progress, maxTime }: { progress: number; maxTime: number }) {
@@ -33,8 +32,8 @@ function OvenProgressBar({ progress, maxTime }: { progress: number; maxTime: num
   );
 }
 
-export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | null> }) {
-  const oven = useOfficeGame((s) => s.oven);
+function SingleOven({ ovenId, playerRef }: { ovenId: number; playerRef: React.RefObject<THREE.Group | null> }) {
+  const ovens = useOfficeGame((s) => s.ovens);
   const carrying = useOfficeGame((s) => s.carrying);
   const placeDoughInOven = useOfficeGame((s) => s.placeDoughInOven);
   const pickupFromOven = useOfficeGame((s) => s.pickupFromOven);
@@ -42,13 +41,16 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
   const ovenCookTime = useOfficeGame((s) => s.ovenCookTime);
   const [isNear, setIsNear] = useState(false);
 
+  const oven = ovens[ovenId];
+  const pos = OVEN_POSITIONS[ovenId];
+
   useFrame((_, delta) => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || !oven) return;
 
     const playerPos = playerRef.current.position;
     const dist = Math.sqrt(
-      Math.pow(playerPos.x - OVEN_POS[0], 2) +
-      Math.pow(playerPos.z - OVEN_POS[2], 2)
+      Math.pow(playerPos.x - pos[0], 2) +
+      Math.pow(playerPos.z - pos[2], 2)
     );
 
     const near = dist < INTERACT_DISTANCE;
@@ -56,20 +58,22 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
 
     if (near) {
       if (carrying === "dough" && !oven.hasDough && !oven.isCooking && !oven.pizzaReady) {
-        placeDoughInOven();
+        placeDoughInOven(ovenId);
       }
       if (carrying === "none" && oven.pizzaReady) {
-        pickupFromOven();
+        pickupFromOven(ovenId);
       }
     }
 
-    updateOven(delta);
+    updateOven(ovenId, delta);
   });
+
+  if (!oven) return null;
 
   const glowColor = oven.isCooking ? "#f97316" : oven.pizzaReady ? "#22c55e" : "#64748b";
 
   return (
-    <group position={OVEN_POS}>
+    <group position={pos}>
       <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.4, 1.0, 1.2]} />
         <meshStandardMaterial color="#8b3a3a" />
@@ -180,7 +184,7 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
         outlineColor="#000000"
         fontWeight="bold"
       >
-        PIZZA OVEN
+        {`OVEN ${ovenId + 1}`}
       </Text>
 
       <pointLight
@@ -190,5 +194,17 @@ export function Oven({ playerRef }: { playerRef: React.RefObject<THREE.Group | n
         distance={2.5}
       />
     </group>
+  );
+}
+
+export function OvenSystem({ playerRef }: { playerRef: React.RefObject<THREE.Group | null> }) {
+  const ovens = useOfficeGame((s) => s.ovens);
+
+  return (
+    <>
+      {ovens.map((oven) => (
+        <SingleOven key={oven.id} ovenId={oven.id} playerRef={playerRef} />
+      ))}
+    </>
   );
 }

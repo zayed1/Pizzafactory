@@ -1,3 +1,5 @@
+import { OVEN_POSITIONS } from "../lib/stores/useOfficeGame";
+
 export interface CollisionBox {
   xMin: number;
   xMax: number;
@@ -10,8 +12,6 @@ const PLAYER_RADIUS = 0.25;
 const STATIC_COLLISIONS: CollisionBox[] = [
   { xMin: 1 - 0.8, xMax: 1 + 1.4, zMin: -5 - 0.5, zMax: -5 + 0.5 },
 
-  { xMin: 1 - 0.8, xMax: 1 + 0.8, zMin: 2 - 0.7, zMax: 2 + 0.7 },
-
   { xMin: 5 - 0.9, xMax: 5 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
   { xMin: 7.5 - 0.9, xMax: 7.5 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
   { xMin: 10 - 0.9, xMax: 10 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
@@ -23,6 +23,22 @@ const STATIC_COLLISIONS: CollisionBox[] = [
   { xMin: 3.5 - 0.15, xMax: 3.5 + 0.15, zMin: -1 - 0.5, zMax: -1 + 0.5 },
   { xMin: 3.5 - 0.15, xMax: 3.5 + 0.15, zMin: 1 - 0.5, zMax: 1 + 0.5 },
 ];
+
+export function getOvenCollisions(ovenCount: number): CollisionBox[] {
+  const boxes: CollisionBox[] = [];
+  for (let i = 0; i < ovenCount; i++) {
+    const pos = OVEN_POSITIONS[i];
+    if (pos) {
+      boxes.push({
+        xMin: pos[0] - 0.8,
+        xMax: pos[0] + 0.8,
+        zMin: pos[2] - 0.7,
+        zMax: pos[2] + 0.7,
+      });
+    }
+  }
+  return boxes;
+}
 
 export function getTableCollisions(tables: { position: [number, number, number]; unlocked: boolean }[]): CollisionBox[] {
   return tables.filter(t => t.unlocked).map(t => ({
@@ -38,9 +54,10 @@ export function resolveCollision(
   currentZ: number,
   newX: number,
   newZ: number,
-  tables: { position: [number, number, number]; unlocked: boolean }[]
+  tables: { position: [number, number, number]; unlocked: boolean }[],
+  ovenCount: number
 ): [number, number] {
-  const allBoxes = [...STATIC_COLLISIONS, ...getTableCollisions(tables)];
+  const allBoxes = [...STATIC_COLLISIONS, ...getOvenCollisions(ovenCount), ...getTableCollisions(tables)];
 
   let resolvedX = newX;
   let resolvedZ = newZ;

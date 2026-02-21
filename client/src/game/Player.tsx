@@ -19,6 +19,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const carrying = useOfficeGame((s) => s.carrying);
   const carryCount = useOfficeGame((s) => s.carryCount);
   const tables = useOfficeGame((s) => s.tables);
+  const ovens = useOfficeGame((s) => s.ovens);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
 
@@ -40,11 +41,11 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       let newZ = currentZ + direction.z * playerSpeed * delta;
 
       newX = Math.max(-1.5, Math.min(18.5, newX));
-      newZ = Math.max(-7.5, Math.min(5.5, newZ));
+      newZ = Math.max(-7.5, Math.min(6.5, newZ));
 
-      const [resolvedX, resolvedZ] = resolveCollision(currentX, currentZ, newX, newZ, tables);
+      const [resolvedX, resolvedZ] = resolveCollision(currentX, currentZ, newX, newZ, tables, ovens.length);
       groupRef.current.position.x = Math.max(-1.5, Math.min(18.5, resolvedX));
-      groupRef.current.position.z = Math.max(-7.5, Math.min(5.5, resolvedZ));
+      groupRef.current.position.z = Math.max(-7.5, Math.min(6.5, resolvedZ));
 
       const angle = Math.atan2(direction.x, direction.z);
       groupRef.current.rotation.y = angle;

@@ -10,6 +10,11 @@ export function GameHUD() {
   const buyUpgrade = useOfficeGame((s) => s.buyUpgrade);
   const tables = useOfficeGame((s) => s.tables);
   const prepEmployees = useOfficeGame((s) => s.prepEmployees);
+  const ovens = useOfficeGame((s) => s.ovens);
+  const streak = useOfficeGame((s) => s.streak);
+  const gameLevel = useOfficeGame((s) => s.gameLevel);
+  const levelProgress = useOfficeGame((s) => s.levelProgress);
+  const pizzasForNextLevel = useOfficeGame((s) => s.pizzasForNextLevel);
   const unlockedTables = tables.filter((t) => t.unlocked).length;
   const totalTables = tables.length;
 
@@ -24,6 +29,8 @@ export function GameHUD() {
     carrying === "dough" ? "#f5deb3" :
     carrying === "pizza_raw" ? "#e8a849" :
     "#22c55e";
+
+  const levelPct = Math.min(100, (levelProgress / pizzasForNextLevel) * 100);
 
   return (
     <div
@@ -81,9 +88,32 @@ export function GameHUD() {
             border: `1px solid ${carryColor}33`,
           }}
         >
-          <span style={{ fontSize: 16 }}>{carrying === "none" ? "🤲" : carrying === "dough" ? "🫓" : "🍕"}</span>
+          <span style={{ fontSize: 16 }}>{carrying === "none" ? "\uD83E\uDD32" : carrying === "dough" ? "\uD83E\uDED3" : "\uD83C\uDF55"}</span>
           {carryLabel}{carryCount > 1 ? ` x${carryCount}` : ""}
         </div>
+
+        {streak > 0 && (
+          <div
+            style={{
+              background: "linear-gradient(135deg, rgba(249,115,22,0.8), rgba(234,88,12,0.8))",
+              borderRadius: 10,
+              padding: "6px 14px",
+              color: "#ffffff",
+              fontSize: 14,
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(249,115,22,0.5)",
+              animation: "pulse 1s ease-in-out infinite",
+            }}
+          >
+            <span style={{ fontSize: 18 }}>\uD83D\uDD25</span>
+            Streak x{streak}
+            <span style={{ fontSize: 11, opacity: 0.8 }}>+${streak * 5} bonus</span>
+          </div>
+        )}
 
         <div
           style={{
@@ -93,12 +123,47 @@ export function GameHUD() {
             color: "#94a3b8",
             fontSize: 12,
             display: "flex",
-            gap: 12,
+            flexDirection: "column",
+            gap: 4,
             backdropFilter: "blur(10px)",
           }}
         >
-          <span style={{ color: "#22c55e" }}>Served: {totalPizzasServed}</span>
-          <span style={{ color: "#ef4444" }}>Missed: {missedCustomers}</span>
+          <div style={{ display: "flex", gap: 12 }}>
+            <span style={{ color: "#22c55e" }}>Served: {totalPizzasServed}</span>
+            <span style={{ color: "#ef4444" }}>Missed: {missedCustomers}</span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "rgba(0,0,0,0.75)",
+            borderRadius: 10,
+            padding: "8px 14px",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(168,85,247,0.3)",
+          }}
+        >
+          <div style={{ color: "#a855f7", fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>
+            Level {gameLevel}
+          </div>
+          <div style={{
+            width: "100%",
+            height: 6,
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: 3,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              width: `${levelPct}%`,
+              height: "100%",
+              background: "linear-gradient(90deg, #a855f7, #c084fc)",
+              borderRadius: 3,
+              transition: "width 0.3s ease",
+            }} />
+          </div>
+          <div style={{ color: "#9ca3af", fontSize: 10, marginTop: 2 }}>
+            {levelProgress}/{pizzasForNextLevel} pizzas
+          </div>
         </div>
       </div>
 
@@ -123,6 +188,7 @@ export function GameHUD() {
         <div>2. Put in oven</div>
         <div>3. Take pizza to prep</div>
         <div>4. Deliver to customer</div>
+        <div style={{ marginTop: 4, color: "#f97316", fontSize: 11 }}>Serve fast for streak bonus!</div>
       </div>
 
       <div
@@ -132,7 +198,7 @@ export function GameHUD() {
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
-          gap: 8,
+          gap: 6,
           pointerEvents: "auto",
           flexWrap: "wrap",
           justifyContent: "center",
@@ -141,7 +207,7 @@ export function GameHUD() {
       >
         <UpgradeButton
           label="Speed"
-          icon="⚡"
+          icon="\u26A1"
           level={upgrades.speed.level}
           maxLevel={upgrades.speed.maxLevel}
           cost={upgrades.speed.cost}
@@ -150,7 +216,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Carry"
-          icon="🤲"
+          icon="\uD83E\uDD32"
           level={upgrades.capacity.level}
           maxLevel={upgrades.capacity.maxLevel}
           cost={upgrades.capacity.cost}
@@ -159,7 +225,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Oven"
-          icon="🔥"
+          icon="\uD83D\uDD25"
           level={upgrades.ovenSpeed.level}
           maxLevel={upgrades.ovenSpeed.maxLevel}
           cost={upgrades.ovenSpeed.cost}
@@ -168,17 +234,28 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Dough"
-          icon="🫓"
+          icon="\uD83E\uDED3"
           level={upgrades.doughSpeed.level}
           maxLevel={upgrades.doughSpeed.maxLevel}
           cost={upgrades.doughSpeed.cost}
           money={money}
           onClick={() => buyUpgrade("doughSpeed")}
         />
+        {ovens.length < 3 && (
+          <UpgradeButton
+            label={`Oven ${ovens.length + 1}`}
+            icon="\uD83C\uDFED"
+            level={upgrades.newOven.level}
+            maxLevel={upgrades.newOven.maxLevel}
+            cost={upgrades.newOven.cost}
+            money={money}
+            onClick={() => buyUpgrade("newOven")}
+          />
+        )}
         {prepEmployees.length < 3 && (
           <UpgradeButton
             label="Prep Staff"
-            icon="👨‍🍳"
+            icon="\uD83D\uDC68\u200D\uD83C\uDF73"
             level={upgrades.prepEmployee.level}
             maxLevel={upgrades.prepEmployee.maxLevel}
             cost={upgrades.prepEmployee.cost}
@@ -189,7 +266,7 @@ export function GameHUD() {
         {unlockedTables < totalTables && (
           <UpgradeButton
             label={`Table ${unlockedTables + 1}`}
-            icon="🪑"
+            icon="\uD83E\uDE91"
             level={upgrades.newTable.level}
             maxLevel={upgrades.newTable.maxLevel}
             cost={upgrades.newTable.cost}
@@ -198,6 +275,13 @@ export function GameHUD() {
           />
         )}
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -236,17 +320,17 @@ function UpgradeButton({
           ? "2px solid #666"
           : canAfford ? "2px solid #f97316" : "2px solid #404040",
         borderRadius: 10,
-        padding: "8px 14px",
+        padding: "6px 10px",
         color: canAfford ? "#ffffff" : "#6b7280",
         cursor: canAfford ? "pointer" : "not-allowed",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 2,
-        minWidth: 80,
+        minWidth: 70,
         transition: "transform 0.15s, box-shadow 0.15s",
         backdropFilter: "blur(10px)",
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: "'Inter', sans-serif",
         fontWeight: 600,
       }}
@@ -259,13 +343,13 @@ function UpgradeButton({
         (e.target as HTMLElement).style.transform = "scale(1)";
       }}
     >
-      <span style={{ fontSize: 20 }}>{icon}</span>
+      <span style={{ fontSize: 18 }}>{icon}</span>
       <span>{label}</span>
       <span style={{ fontSize: 10, opacity: 0.8 }}>
         {maxed ? "MAX" : `Lv.${level}`}
       </span>
       {!maxed && (
-        <span style={{ fontSize: 11, color: canAfford ? "#fed7aa" : "#9ca3af" }}>
+        <span style={{ fontSize: 10, color: canAfford ? "#fed7aa" : "#9ca3af" }}>
           ${cost}
         </span>
       )}

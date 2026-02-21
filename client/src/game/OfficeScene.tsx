@@ -3,12 +3,15 @@ import * as THREE from "three";
 import { OfficeFloor } from "./OfficeFoor";
 import { Player } from "./Player";
 import { DoughMaker } from "./DoughMaker";
-import { Oven } from "./Oven";
+import { OvenSystem } from "./Oven";
 import { PrepStation } from "./PrepStation";
 import { CustomerTableComp } from "./CustomerTable";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { OfficeFurniture } from "./OfficeFurniture";
 import { GameLoop } from "./GameLoop";
+import { FloatingTextManager } from "./FloatingText";
+import { GuideArrows } from "./GuideArrows";
+import { SoundManager } from "./SoundManager";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -32,7 +35,7 @@ export function OfficeScene() {
         color="#fff8f0"
       />
       <pointLight position={[1, 2.5, -5]} intensity={0.5} color="#fbbf24" distance={6} />
-      <pointLight position={[1, 2.5, 2]} intensity={0.6} color="#f97316" distance={5} />
+      <pointLight position={[1, 2.5, 0.5]} intensity={0.6} color="#f97316" distance={5} />
       <pointLight position={[7.5, 2.5, -6]} intensity={0.3} color="#a855f7" distance={5} />
       <pointLight position={[14, 2.5, -1]} intensity={0.4} color="#fef3c7" distance={8} />
 
@@ -44,7 +47,7 @@ export function OfficeScene() {
       <Player ref={playerRef} />
 
       <DoughMaker playerRef={playerRef} />
-      <Oven playerRef={playerRef} />
+      <OvenSystem playerRef={playerRef} />
 
       {prepEmployees.map((emp, i) => (
         <PrepStation key={emp.id} emp={emp} index={i} playerRef={playerRef} />
@@ -54,6 +57,9 @@ export function OfficeScene() {
         <CustomerTableComp key={table.id} table={table} playerRef={playerRef} />
       ))}
 
+      <GuideArrows />
+      <FloatingTextManager />
+      <SoundManager />
       <GameLoop />
     </>
   );

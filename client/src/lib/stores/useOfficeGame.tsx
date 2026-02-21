@@ -23,6 +23,7 @@ export interface CustomerTable {
 }
 
 export interface OvenState {
+  id: number;
   hasDough: boolean;
   isCooking: boolean;
   cookProgress: number;
@@ -54,7 +55,7 @@ interface PizzaGameState {
   maxDough: number;
   doughSpawnInterval: number;
 
-  oven: OvenState;
+  ovens: OvenState[];
   ovenCookTime: number;
   ovenCoolTime: number;
 
@@ -66,6 +67,15 @@ interface PizzaGameState {
   customerPatience: number;
   cashPerPizza: number;
 
+  streak: number;
+  bestStreak: number;
+  lastServeTime: number;
+  streakTimeout: number;
+
+  gameLevel: number;
+  levelProgress: number;
+  pizzasForNextLevel: number;
+
   upgrades: {
     speed: UpgradeInfo;
     capacity: UpgradeInfo;
@@ -73,22 +83,24 @@ interface PizzaGameState {
     prepEmployee: UpgradeInfo;
     newTable: UpgradeInfo;
     doughSpeed: UpgradeInfo;
+    newOven: UpgradeInfo;
   };
 
   startGame: () => void;
 
   pickupDough: () => boolean;
-  placeDoughInOven: () => boolean;
-  pickupFromOven: () => boolean;
+  placeDoughInOven: (ovenId: number) => boolean;
+  pickupFromOven: (ovenId: number) => boolean;
   deliverToPrep: (empId: number) => boolean;
   pickupFromPrep: (empId: number) => boolean;
   deliverToTable: (tableId: number) => boolean;
 
-  updateOven: (delta: number) => void;
+  updateOven: (ovenId: number, delta: number) => void;
   updatePrepEmployee: (empId: number, delta: number) => void;
   spawnDough: () => void;
   spawnCustomer: () => void;
   updateCustomerTimers: (delta: number) => void;
+  updateStreak: (delta: number) => void;
 
   buyUpgrade: (type: keyof PizzaGameState["upgrades"]) => boolean;
 }
@@ -100,6 +112,12 @@ const TABLE_POSITIONS: [number, number, number][] = [
   [15.5, 0, -4.5],
   [15.5, 0, -1.5],
   [15.5, 0, 1.5],
+];
+
+export const OVEN_POSITIONS: [number, number, number][] = [
+  [1, 0, 0],
+  [1, 0, 2.8],
+  [1, 0, 5.2],
 ];
 
 function createTables(): CustomerTable[] {
@@ -117,6 +135,12 @@ function createTables(): CustomerTable[] {
 function createPrepEmployees(): PrepEmployee[] {
   return [
     { id: 0, hasPizza: false, isWorking: false, workProgress: 0, pizzaReady: false },
+  ];
+}
+
+function createOvens(): OvenState[] {
+  return [
+    { id: 0, hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 },
   ];
 }
 
@@ -138,13 +162,7 @@ export const useOfficeGame = create<PizzaGameState>()(
     maxDough: 8,
     doughSpawnInterval: 3,
 
-    oven: {
-      hasDough: false,
-      isCooking: false,
-      cookProgress: 0,
-      pizzaReady: false,
-      pizzaCooling: 0,
-    },
+    ovens: createOvens(),
     ovenCookTime: 4,
     ovenCoolTime: 8,
 
@@ -156,6 +174,15 @@ export const useOfficeGame = create<PizzaGameState>()(
     customerPatience: 15,
     cashPerPizza: 30,
 
+    streak: 0,
+    bestStreak: 0,
+    lastServeTime: 0,
+    streakTimeout: 8,
+
+    gameLevel: 1,
+    levelProgress: 0,
+    pizzasForNextLevel: 5,
+
     upgrades: {
       speed: { level: 0, cost: 40, baseCost: 40, maxLevel: 10 },
       capacity: { level: 0, cost: 200, baseCost: 200, maxLevel: 3 },
@@ -163,6 +190,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       prepEmployee: { level: 0, cost: 150, baseCost: 150, maxLevel: 2 },
       newTable: { level: 0, cost: 100, baseCost: 100, maxLevel: 5 },
       doughSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
+      newOven: { level: 0, cost: 250, baseCost: 250, maxLevel: 2 },
     },
 
     startGame: () => set({ phase: "playing" }),
@@ -176,26 +204,32 @@ export const useOfficeGame = create<PizzaGameState>()(
       return true;
     },
 
-    placeDoughInOven: () => {
+    placeDoughInOven: (ovenId: number) => {
       const s = get();
       if (s.carrying !== "dough" || s.carryCount <= 0) return false;
-      if (s.oven.hasDough || s.oven.isCooking || s.oven.pizzaReady) return false;
+      const oven = s.ovens[ovenId];
+      if (!oven || oven.hasDough || oven.isCooking || oven.pizzaReady) return false;
+      const newOvens = [...s.ovens];
+      newOvens[ovenId] = { ...oven, hasDough: true, isCooking: true, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 };
       set({
         carrying: s.carryCount > 1 ? "dough" : "none",
         carryCount: s.carryCount - 1,
-        oven: { hasDough: true, isCooking: true, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 },
+        ovens: newOvens,
       });
       return true;
     },
 
-    pickupFromOven: () => {
+    pickupFromOven: (ovenId: number) => {
       const s = get();
       if (s.carrying !== "none") return false;
-      if (!s.oven.pizzaReady) return false;
+      const oven = s.ovens[ovenId];
+      if (!oven || !oven.pizzaReady) return false;
+      const newOvens = [...s.ovens];
+      newOvens[ovenId] = { ...oven, hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 };
       set({
         carrying: "pizza_raw",
         carryCount: 1,
-        oven: { hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 },
+        ovens: newOvens,
       });
       return true;
     },
@@ -233,38 +267,70 @@ export const useOfficeGame = create<PizzaGameState>()(
       if (!table || !table.unlocked || !table.hasCustomer || table.served) return false;
       const newTables = [...s.tables];
       newTables[tableId] = { ...table, served: true, hasCustomer: false, customerTimer: 0 };
-      const cash = s.cashPerPizza;
+
+      const streakBonus = Math.min(s.streak, 10);
+      const cash = s.cashPerPizza + streakBonus * 5;
+
+      const newServed = s.totalPizzasServed + 1;
+      const newProgress = s.levelProgress + 1;
+      let newLevel = s.gameLevel;
+      let newPizzasForNext = s.pizzasForNextLevel;
+      let progress = newProgress;
+
+      if (newProgress >= s.pizzasForNextLevel) {
+        newLevel = s.gameLevel + 1;
+        progress = 0;
+        newPizzasForNext = Math.floor(s.pizzasForNextLevel * 1.4);
+      }
+
       set({
         carrying: s.carryCount > 1 ? "pizza_ready" : "none",
         carryCount: s.carryCount - 1,
         tables: newTables,
         money: s.money + cash,
         totalMoneyEarned: s.totalMoneyEarned + cash,
-        totalPizzasServed: s.totalPizzasServed + 1,
+        totalPizzasServed: newServed,
+        streak: s.streak + 1,
+        bestStreak: Math.max(s.bestStreak, s.streak + 1),
+        lastServeTime: Date.now(),
+        gameLevel: newLevel,
+        levelProgress: progress,
+        pizzasForNextLevel: newPizzasForNext,
+        cashPerPizza: 30 + (newLevel - 1) * 5,
+        customerSpawnInterval: Math.max(2, 5 - (newLevel - 1) * 0.3),
       });
       return true;
     },
 
-    updateOven: (delta: number) => {
+    updateOven: (ovenId: number, delta: number) => {
       const s = get();
-      if (!s.oven.isCooking) {
-        if (s.oven.pizzaReady) {
-          const newCooling = s.oven.pizzaCooling + delta;
+      const oven = s.ovens[ovenId];
+      if (!oven) return;
+
+      if (!oven.isCooking) {
+        if (oven.pizzaReady) {
+          const newCooling = oven.pizzaCooling + delta;
           if (newCooling >= s.ovenCoolTime) {
-            set({ oven: { hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 } });
+            const newOvens = [...s.ovens];
+            newOvens[ovenId] = { ...oven, hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 };
+            set({ ovens: newOvens });
           } else {
-            set({ oven: { ...s.oven, pizzaCooling: newCooling } });
+            const newOvens = [...s.ovens];
+            newOvens[ovenId] = { ...oven, pizzaCooling: newCooling };
+            set({ ovens: newOvens });
           }
         }
         return;
       }
-      const newProgress = s.oven.cookProgress + delta;
+      const newProgress = oven.cookProgress + delta;
       if (newProgress >= s.ovenCookTime) {
-        set({
-          oven: { hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: true, pizzaCooling: 0 },
-        });
+        const newOvens = [...s.ovens];
+        newOvens[ovenId] = { ...oven, hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: true, pizzaCooling: 0 };
+        set({ ovens: newOvens });
       } else {
-        set({ oven: { ...s.oven, cookProgress: newProgress } });
+        const newOvens = [...s.ovens];
+        newOvens[ovenId] = { ...oven, cookProgress: newProgress };
+        set({ ovens: newOvens });
       }
     },
 
@@ -296,10 +362,12 @@ export const useOfficeGame = create<PizzaGameState>()(
       const emptyTable = s.tables.find((t) => t.unlocked && !t.hasCustomer && !t.served);
       if (!emptyTable) return;
       const newTables = [...s.tables];
+      const patience = Math.max(8, s.customerPatience - (s.gameLevel - 1) * 0.5);
       newTables[emptyTable.id] = {
         ...emptyTable,
         hasCustomer: true,
         customerTimer: 0,
+        customerMaxTime: patience,
         served: false,
       };
       set({ tables: newTables });
@@ -318,7 +386,7 @@ export const useOfficeGame = create<PizzaGameState>()(
           return t;
         }
         const newTimer = t.customerTimer + delta;
-        if (newTimer >= s.customerPatience) {
+        if (newTimer >= t.customerMaxTime) {
           changed = true;
           missed++;
           return { ...t, hasCustomer: false, customerTimer: 0, served: false };
@@ -327,7 +395,18 @@ export const useOfficeGame = create<PizzaGameState>()(
         return { ...t, customerTimer: newTimer };
       });
       if (changed) {
-        set({ tables: newTables, missedCustomers: s.missedCustomers + missed });
+        const updates: any = { tables: newTables, missedCustomers: s.missedCustomers + missed };
+        if (missed > 0) {
+          updates.streak = 0;
+        }
+        set(updates);
+      }
+    },
+
+    updateStreak: (_delta: number) => {
+      const s = get();
+      if (s.streak > 0 && Date.now() - s.lastServeTime > s.streakTimeout * 1000) {
+        set({ streak: 0 });
       }
     },
 
@@ -371,6 +450,17 @@ export const useOfficeGame = create<PizzaGameState>()(
         }
       } else if (type === "doughSpeed") {
         updates.doughSpawnInterval = Math.max(1, 3 - newLevel * 0.25);
+      } else if (type === "newOven") {
+        const newOvens = [...s.ovens];
+        newOvens.push({
+          id: newOvens.length,
+          hasDough: false,
+          isCooking: false,
+          cookProgress: 0,
+          pizzaReady: false,
+          pizzaCooling: 0,
+        });
+        updates.ovens = newOvens;
       }
 
       set(updates);

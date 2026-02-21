@@ -46,7 +46,7 @@ export function OfficeFloor() {
         <boxGeometry args={[22.4, 3, 0.25]} />
         <meshStandardMaterial color="#c9a87c" />
       </mesh>
-      <mesh position={[8, 1.5, 7]}>
+      <mesh position={[8, 1.5, 7.5]}>
         <boxGeometry args={[22.4, 3, 0.25]} />
         <meshStandardMaterial color="#c9a87c" />
       </mesh>
