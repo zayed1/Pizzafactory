@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useOfficeGame, ItemType } from "../lib/stores/useOfficeGame";
+import { resolveCollision } from "./collisions";
 
 const ITEM_LABELS: Record<ItemType, string> = {
   none: "",
@@ -17,6 +18,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const playerSpeed = useOfficeGame((s) => s.playerSpeed);
   const carrying = useOfficeGame((s) => s.carrying);
   const carryCount = useOfficeGame((s) => s.carryCount);
+  const tables = useOfficeGame((s) => s.tables);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
 
@@ -32,14 +34,20 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
 
     if (direction.length() > 0) {
       direction.normalize();
-      groupRef.current.position.x += direction.x * playerSpeed * delta;
-      groupRef.current.position.z += direction.z * playerSpeed * delta;
+      const currentX = groupRef.current.position.x;
+      const currentZ = groupRef.current.position.z;
+      let newX = currentX + direction.x * playerSpeed * delta;
+      let newZ = currentZ + direction.z * playerSpeed * delta;
+
+      newX = Math.max(-1.5, Math.min(18.5, newX));
+      newZ = Math.max(-7.5, Math.min(5.5, newZ));
+
+      const [resolvedX, resolvedZ] = resolveCollision(currentX, currentZ, newX, newZ, tables);
+      groupRef.current.position.x = Math.max(-1.5, Math.min(18.5, resolvedX));
+      groupRef.current.position.z = Math.max(-7.5, Math.min(5.5, resolvedZ));
 
       const angle = Math.atan2(direction.x, direction.z);
       groupRef.current.rotation.y = angle;
-
-      groupRef.current.position.x = Math.max(-2, Math.min(18, groupRef.current.position.x));
-      groupRef.current.position.z = Math.max(-7, Math.min(5, groupRef.current.position.z));
     }
   });
 

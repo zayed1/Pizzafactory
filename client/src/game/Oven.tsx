@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
 
-const OVEN_POS: [number, number, number] = [0, 0, 1.5];
+const OVEN_POS: [number, number, number] = [1, 0, 2];
 const INTERACT_DISTANCE = 2.0;
 
 function OvenProgressBar({ progress, maxTime }: { progress: number; maxTime: number }) {

@@ -4,6 +4,8 @@
 A 3D browser-based idle/management game inspired by Office Fever but themed as a pizza factory. The player controls a chef who picks up dough, bakes it in the oven, sends it to prep employees for toppings, and delivers finished pizzas to customers before their patience runs out.
 
 ## Recent Changes
+- 2026-02-21: Reorganized layout with 3 zones (Kitchen→Prep→Dining), added AABB collision system
+- 2026-02-21: Redesigned visuals to restaurant/kitchen theme with proper 3D models
 - 2026-02-21: Converted game from Office Fever to Pizza Factory with full pipeline mechanics
 - 2026-02-21: Initial project setup
 
@@ -24,8 +26,9 @@ A 3D browser-based idle/management game inspired by Office Fever but themed as a
   - `PrepStation.tsx` - Employees prepare pizza with toppings
   - `CustomerTable.tsx` - Customer tables with patience timers
   - `GameLoop.tsx` - Spawns customers and updates timers
-  - `OfficeFoor.tsx` - Factory floor and walls
-  - `OfficeFurniture.tsx` - Decorative furniture
+  - `OfficeFoor.tsx` - Restaurant floor (kitchen tiles + dining wood) and walls
+  - `OfficeFurniture.tsx` - Restaurant decorations (shelves, menu board, dividers, lights)
+  - `collisions.ts` - AABB collision system for all stations and furniture
   - `GameHUD.tsx` - UI overlay (money, carrying, upgrades)
   - `StartMenu.tsx` - Start screen
 - `client/src/lib/stores/useOfficeGame.tsx` - Game state store

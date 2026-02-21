@@ -3,7 +3,7 @@ import { useMemo } from "react";
 export function OfficeFloor() {
   const kitchenTiles = useMemo(() => {
     const tiles: { color: string; x: number; z: number }[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 8; j++) {
         tiles.push({
           color: (i + j) % 2 === 0 ? "#e8e0d4" : "#d4c8b8",
@@ -24,8 +24,13 @@ export function OfficeFloor() {
         </mesh>
       ))}
 
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[7.5, -0.01, -1]} receiveShadow>
+        <planeGeometry args={[5, 16]} />
+        <meshStandardMaterial color="#c9b896" />
+      </mesh>
+
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14, -0.01, -1]} receiveShadow>
-        <planeGeometry args={[12, 14]} />
+        <planeGeometry args={[10, 16]} />
         <meshStandardMaterial color="#5c3a1e" />
       </mesh>
 
@@ -58,12 +63,7 @@ export function OfficeFloor() {
 
       <mesh position={[8, 2.99, -1]}>
         <boxGeometry args={[22.2, 0.05, 15.8]} />
-        <meshStandardMaterial color="#f5eedc" opacity={0.25} transparent />
-      </mesh>
-
-      <mesh position={[8.5, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.15, 14]} />
-        <meshStandardMaterial color="#8b6914" opacity={0.4} transparent />
+        <meshStandardMaterial color="#f5eedc" opacity={0.2} transparent />
       </mesh>
     </group>
   );

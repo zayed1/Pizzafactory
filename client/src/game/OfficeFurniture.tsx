@@ -31,10 +31,6 @@ function KitchenShelf({ position }: { position: [number, number, number] }) {
         <boxGeometry args={[0.12, 0.15, 0.08]} />
         <meshStandardMaterial color="#f5f5dc" />
       </mesh>
-      <mesh position={[0.6, 0.06, 0.05]}>
-        <boxGeometry args={[0.1, 0.12, 0.08]} />
-        <meshStandardMaterial color="#d4a574" />
-      </mesh>
     </group>
   );
 }
@@ -49,14 +45,6 @@ function MenuBoard({ position }: { position: [number, number, number] }) {
       <mesh position={[0, 0, 0.01]}>
         <boxGeometry args={[1.85, 1.05, 0.02]} />
         <meshStandardMaterial color="#16213e" />
-      </mesh>
-      <mesh position={[-0.95, 0.65, 0]}>
-        <boxGeometry args={[0.06, 0.15, 0.06]} />
-        <meshStandardMaterial color="#8b6914" />
-      </mesh>
-      <mesh position={[0.95, 0.65, 0]}>
-        <boxGeometry args={[0.06, 0.15, 0.06]} />
-        <meshStandardMaterial color="#8b6914" />
       </mesh>
       <Text position={[0, 0.3, 0.05]} fontSize={0.2} color="#fbbf24" anchorX="center" fontWeight="bold">
         PIZZA FACTORY
@@ -80,60 +68,10 @@ function MenuBoard({ position }: { position: [number, number, number] }) {
   );
 }
 
-function KitchenCounter({ position, width }: { position: [number, number, number]; width: number }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width, 0.06, 0.8]} />
-        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.2, 0]}>
-        <boxGeometry args={[width, 0.42, 0.75]} />
-        <meshStandardMaterial color="#f5f5f4" />
-      </mesh>
-      <mesh position={[0, 0.2, 0.38]}>
-        <boxGeometry args={[width, 0.42, 0.02]} />
-        <meshStandardMaterial color="#e7e5e4" />
-      </mesh>
-    </group>
-  );
-}
-
-function ServingWindow({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.8, 0]}>
-        <boxGeometry args={[3.5, 0.12, 0.6]} />
-        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
-      </mesh>
-      <mesh position={[-1.8, 1.4, 0]}>
-        <boxGeometry args={[0.08, 1.3, 0.5]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-      <mesh position={[1.8, 1.4, 0]}>
-        <boxGeometry args={[0.08, 1.3, 0.5]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-      <mesh position={[0, 2.05, 0]}>
-        <boxGeometry args={[3.68, 0.08, 0.5]} />
-        <meshStandardMaterial color="#a1a1aa" />
-      </mesh>
-
-      <mesh position={[0, 2.15, 0]}>
-        <boxGeometry args={[2.5, 0.15, 0.08]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
-      <Text position={[0, 2.15, 0.05]} fontSize={0.09} color="#ffffff" anchorX="center" fontWeight="bold">
-        ORDER UP!
-      </Text>
-    </group>
-  );
-}
-
 function HangingLight({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0, 0]}>
+      <mesh>
         <cylinderGeometry args={[0.01, 0.01, 0.4, 6]} />
         <meshStandardMaterial color="#333333" />
       </mesh>
@@ -200,55 +138,60 @@ function Fridge({ position }: { position: [number, number, number] }) {
   );
 }
 
-function Sink({ position }: { position: [number, number, number] }) {
+function KitchenDivider({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.42, 0]} castShadow>
-        <boxGeometry args={[0.8, 0.06, 0.6]} />
-        <meshStandardMaterial color="#d4d4d8" metalness={0.3} roughness={0.4} />
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <boxGeometry args={[0.15, 1.0, 0.8]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.2} />
       </mesh>
-      <mesh position={[0, 0.2, 0]}>
-        <boxGeometry args={[0.75, 0.38, 0.55]} />
-        <meshStandardMaterial color="#f5f5f4" />
-      </mesh>
-      <mesh position={[0, 0.38, 0]}>
-        <boxGeometry args={[0.5, 0.15, 0.4]} />
-        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.55, -0.15]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.2, 6]} />
-        <meshStandardMaterial color="#737373" metalness={0.6} />
-      </mesh>
-      <mesh position={[0, 0.65, -0.1]}>
-        <sphereGeometry args={[0.04, 6, 6]} />
-        <meshStandardMaterial color="#737373" metalness={0.6} />
+      <mesh position={[0, 1.02, 0]}>
+        <boxGeometry args={[0.2, 0.04, 0.85]} />
+        <meshStandardMaterial color="#a1a1aa" metalness={0.3} />
       </mesh>
     </group>
+  );
+}
+
+function FloorLabel({ position, text, color }: { position: [number, number, number]; text: string; color: string }) {
+  return (
+    <Text
+      position={position}
+      rotation={[-Math.PI / 2, 0, 0]}
+      fontSize={0.35}
+      color={color}
+      anchorX="center"
+      anchorY="middle"
+      outlineWidth={0.02}
+      outlineColor="#000000"
+      fontWeight="bold"
+    >
+      {text}
+    </Text>
   );
 }
 
 export function OfficeFurniture() {
   return (
     <group>
-      <KitchenShelf position={[-2.7, 1.8, -5]} />
-      <KitchenShelf position={[-2.7, 2.3, -5]} />
+      <KitchenShelf position={[-2.7, 1.8, -3]} />
+      <KitchenShelf position={[-2.7, 2.3, -3]} />
       <KitchenShelf position={[-2.7, 1.8, 0]} />
 
-      <MenuBoard position={[8, 2.0, -8.7]} />
-
-      <ServingWindow position={[8.5, 0, -2]} />
-
-      <KitchenCounter position={[-1.5, 0, -5.5]} width={2.5} />
-      <KitchenCounter position={[-1.5, 0, 4]} width={2.5} />
+      <MenuBoard position={[14, 2.0, -8.7]} />
 
       <Fridge position={[-2.3, 0, -7.5]} />
       <Fridge position={[-2.3, 0, 5]} />
-      <Sink position={[-1.5, 0, -0.5]} />
 
-      <HangingLight position={[12, 2.8, 2]} />
-      <HangingLight position={[14, 2.8, 0]} />
-      <HangingLight position={[16, 2.8, -3]} />
-      <HangingLight position={[12, 2.8, -5]} />
+      <KitchenDivider position={[3.5, 0, -3]} />
+      <KitchenDivider position={[3.5, 0, -1]} />
+      <KitchenDivider position={[3.5, 0, 1]} />
+
+      <HangingLight position={[1, 2.8, -5]} />
+      <HangingLight position={[1, 2.8, 2]} />
+      <HangingLight position={[12, 2.8, -4.5]} />
+      <HangingLight position={[12, 2.8, 1.5]} />
+      <HangingLight position={[15.5, 2.8, -1.5]} />
 
       <WallDecor position={[18.8, 1.8, -5]} />
       <WallDecor position={[18.8, 1.8, 2]} />
@@ -260,6 +203,10 @@ export function OfficeFurniture() {
       <Text position={[18.75, 1.5, -1.5]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.12} color="#fef3c7" anchorX="center">
         {"Buon Appetito!"}
       </Text>
+
+      <FloorLabel position={[1, 0.02, -1.5]} text="KITCHEN" color="#f5deb3" />
+      <FloorLabel position={[7.5, 0.02, -3.5]} text="PREP" color="#a855f7" />
+      <FloorLabel position={[14, 0.02, 4]} text="DINING" color="#f97316" />
     </group>
   );
 }

@@ -94,12 +94,12 @@ interface PizzaGameState {
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
-  [12, 0, -4],
+  [12, 0, -4.5],
   [12, 0, -1.5],
-  [12, 0, 1],
-  [15, 0, -4],
-  [15, 0, -1.5],
-  [15, 0, 1],
+  [12, 0, 1.5],
+  [15.5, 0, -4.5],
+  [15.5, 0, -1.5],
+  [15.5, 0, 1.5],
 ];
 
 function createTables(): CustomerTable[] {

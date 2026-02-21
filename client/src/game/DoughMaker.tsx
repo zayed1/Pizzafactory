@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
 
-const DOUGH_MAKER_POS: [number, number, number] = [0, 0, -2];
+const DOUGH_MAKER_POS: [number, number, number] = [1, 0, -5];
 const INTERACT_DISTANCE = 2.0;
 
 function MixerBowl() {
