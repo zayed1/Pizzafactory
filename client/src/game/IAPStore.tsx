@@ -50,18 +50,6 @@ interface IAPState {
   purchasePack: (pack: CoinPack) => Promise<void>;
 }
 
-declare global {
-  interface Window {
-    Capacitor?: {
-      isNativePlatform: () => boolean;
-    };
-  }
-}
-
-function isNative(): boolean {
-  return !!(window.Capacitor && window.Capacitor.isNativePlatform());
-}
-
 export const useIAPStore = create<IAPState>((set) => ({
   shopOpen: false,
   purchasing: false,
@@ -77,17 +65,19 @@ export const useIAPStore = create<IAPState>((set) => ({
 
     try {
       const { InAppPurchase } = await import("./IAPBridge");
-      if (isNative() || InAppPurchase.isAvailable()) {
-        const success = await InAppPurchase.purchase(pack.productId);
-        if (success) {
-          const { useOfficeGame } = await import("../lib/stores/useOfficeGame");
-          useOfficeGame.getState().addMoney(pack.coins);
-          set({ purchasing: false });
-        } else {
-          set({ purchasing: false, purchaseError: "Purchase cancelled" });
-        }
-      } else {
+
+      if (!InAppPurchase.isAvailable()) {
         set({ purchasing: false, purchaseError: "In-app purchases are only available in the iOS app" });
+        return;
+      }
+
+      const success = await InAppPurchase.purchase(pack.productId);
+      if (success) {
+        const { useOfficeGame } = await import("../lib/stores/useOfficeGame");
+        useOfficeGame.getState().addMoney(pack.coins);
+        set({ purchasing: false });
+      } else {
+        set({ purchasing: false, purchaseError: "Purchase cancelled" });
       }
     } catch (err: any) {
       set({ purchasing: false, purchaseError: err?.message || "Purchase failed" });

@@ -1,16 +1,6 @@
-const IAP_TIMEOUT = 60000;
-const BRIDGE_WAIT_TIMEOUT = 5000;
-const BRIDGE_POLL_INTERVAL = 200;
+import { Purchases, LOG_LEVEL, PURCHASES_ERROR_CODE } from "@revenuecat/purchases-capacitor";
 
-function checkBridgeNow(): boolean {
-  try {
-    if ((window as any).webkit?.messageHandlers?.iap) return true;
-  } catch {}
-  try {
-    if ((window as any).__iapBridgeAvailable) return true;
-  } catch {}
-  return false;
-}
+let configured = false;
 
 function isNativeApp(): boolean {
   try {
@@ -20,92 +10,81 @@ function isNativeApp(): boolean {
   }
 }
 
-async function waitForBridge(): Promise<boolean> {
-  if (checkBridgeNow()) return true;
+async function ensureConfigured(): Promise<boolean> {
+  if (configured) return true;
   if (!isNativeApp()) return false;
 
-  return new Promise((resolve) => {
-    const start = Date.now();
-    const interval = setInterval(() => {
-      if (checkBridgeNow()) {
-        clearInterval(interval);
-        resolve(true);
-        return;
-      }
-      if (Date.now() - start > BRIDGE_WAIT_TIMEOUT) {
-        clearInterval(interval);
-        resolve(false);
-      }
-    }, BRIDGE_POLL_INTERVAL);
-  });
-}
+  try {
+    const apiKey = (window as any).__RC_API_KEY || import.meta.env.VITE_REVENUECAT_API_KEY || "";
+    if (!apiKey) {
+      console.warn("RevenueCat: No API key found");
+      return false;
+    }
 
-function postToNative(message: Record<string, any>): void {
-  if ((window as any).webkit?.messageHandlers?.iap) {
-    (window as any).webkit.messageHandlers.iap.postMessage(message);
-    return;
+    await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+    await Purchases.configure({ apiKey });
+    configured = true;
+    console.log("RevenueCat: Configured successfully");
+    return true;
+  } catch (err) {
+    console.error("RevenueCat: Configuration failed", err);
+    return false;
   }
-  throw new Error("Native message handler not found");
 }
 
 export const InAppPurchase = {
   isAvailable(): boolean {
-    return checkBridgeNow() || isNativeApp();
+    return isNativeApp();
+  },
+
+  async initialize(): Promise<boolean> {
+    return ensureConfigured();
   },
 
   async purchase(productId: string): Promise<boolean> {
-    const bridgeReady = await waitForBridge();
-    if (!bridgeReady) {
-      throw new Error("In-app purchases require the iOS app. Please install from the App Store.");
+    const ready = await ensureConfigured();
+    if (!ready) {
+      throw new Error("In-app purchases require the iOS app.");
     }
 
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        delete (window as any).__iapCallback;
-        reject(new Error("Purchase timed out"));
-      }, IAP_TIMEOUT);
+    try {
+      const offerings = await Purchases.getOfferings();
+      const allPackages = offerings.current?.availablePackages || [];
 
-      (window as any).__iapCallback = (success: boolean) => {
-        clearTimeout(timeout);
-        delete (window as any).__iapCallback;
-        resolve(success);
-      };
+      const pkg = allPackages.find(
+        (p) => p.product.identifier === productId
+      );
 
-      try {
-        postToNative({ action: "purchase", productId });
-      } catch (err) {
-        clearTimeout(timeout);
-        delete (window as any).__iapCallback;
-        reject(err);
+      if (pkg) {
+        const result = await Purchases.purchasePackage({ aPackage: pkg });
+        return !!result?.customerInfo;
       }
-    });
+
+      const result = await Purchases.purchaseStoreProduct({
+        product: { identifier: productId } as any,
+      });
+      return !!result?.customerInfo;
+    } catch (err: any) {
+      if (err?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+        return false;
+      }
+      console.error("RevenueCat: Purchase error", err);
+      throw new Error(err?.message || "Purchase failed");
+    }
   },
 
   async restorePurchases(): Promise<boolean> {
-    const bridgeReady = await waitForBridge();
-    if (!bridgeReady) {
-      throw new Error("Restore requires the iOS app. Please install from the App Store.");
+    const ready = await ensureConfigured();
+    if (!ready) {
+      throw new Error("Restore requires the iOS app.");
     }
 
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        delete (window as any).__restoreCallback;
-        reject(new Error("Restore timed out"));
-      }, IAP_TIMEOUT);
-
-      (window as any).__restoreCallback = (success: boolean) => {
-        clearTimeout(timeout);
-        delete (window as any).__restoreCallback;
-        resolve(success);
-      };
-
-      try {
-        postToNative({ action: "restore" });
-      } catch (err) {
-        clearTimeout(timeout);
-        delete (window as any).__restoreCallback;
-        reject(err);
-      }
-    });
+    try {
+      const result = await Purchases.restorePurchases();
+      return !!result?.customerInfo;
+    } catch (err: any) {
+      console.error("RevenueCat: Restore error", err);
+      throw new Error(err?.message || "Restore failed");
+    }
   },
 };

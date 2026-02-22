@@ -4,6 +4,7 @@
 A 3D browser-based idle/management game inspired by Office Fever but themed as a pizza factory. The player controls a chef who picks up dough, bakes it in the oven, sends it to prep employees for toppings, and delivers finished pizzas to customers before their patience runs out.
 
 ## Recent Changes
+- 2026-02-22: Switched IAP system from custom StoreKit/WebKit bridge to RevenueCat (@revenuecat/purchases-capacitor). No more manual IAPPlugin.swift needed. Simplified iOS setup guide.
 - 2026-02-22: Landscape orientation - forced landscape on iOS (Capacitor + Xcode config), rotate-device screen for portrait browsers, adjusted camera/HUD/touch controls for landscape layout
 - 2026-02-22: Mobile/iOS support - touch controls (virtual joystick), Capacitor iOS setup, in-app purchase system with coin packs, coin shop UI, drop item button
 - 2026-02-21: Second round improvements - particle effects (oven smoke/fire, money sparkles), pause menu with stats (ESC), customer variety (colors/moods/expressions), player walking animation, prep speed upgrade, earnings rate display
@@ -43,7 +44,7 @@ A 3D browser-based idle/management game inspired by Office Fever but themed as a
   - `TouchControls.tsx` - Virtual joystick and mobile buttons (auto-detected)
   - `CoinShop.tsx` - In-app purchase coin shop UI
   - `IAPStore.tsx` - IAP state management and purchase logic
-  - `IAPBridge.ts` - Native iOS purchase bridge (WebKit message handlers)
+  - `IAPBridge.ts` - RevenueCat purchase bridge (@revenuecat/purchases-capacitor)
 - `client/src/lib/stores/useOfficeGame.tsx` - Game state store
 - `capacitor.config.ts` - Capacitor iOS configuration
 - `IOS_SETUP_GUIDE.md` - Complete iOS build and IAP setup instructions
