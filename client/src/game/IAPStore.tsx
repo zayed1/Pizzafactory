@@ -76,8 +76,8 @@ export const useIAPStore = create<IAPState>((set) => ({
     set({ purchasing: true, purchaseError: null });
 
     try {
-      if (isNative()) {
-        const { InAppPurchase } = await import("./IAPBridge");
+      const { InAppPurchase } = await import("./IAPBridge");
+      if (isNative() || InAppPurchase.isAvailable()) {
         const success = await InAppPurchase.purchase(pack.productId);
         if (success) {
           const { useOfficeGame } = await import("../lib/stores/useOfficeGame");

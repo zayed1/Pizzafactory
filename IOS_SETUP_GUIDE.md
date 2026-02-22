@@ -136,7 +136,7 @@ Capacitor manages its own WebView, so we need to create a **Capacitor Plugin** t
 
 ### 7.1 - Create the IAP Plugin
 
-In Xcode, you need to create **two Swift files** inside the `App/App/` folder:
+In Xcode, you need to create **two files** inside the `App/App/` folder:
 
 #### File 1: IAPPlugin.swift
 
@@ -146,11 +146,13 @@ In Xcode, you need to create **two Swift files** inside the `App/App/` folder:
 4. Replace all the contents with this code:
 
 ```swift
-import Capacitor
+import Foundation
+import WebKit
 import StoreKit
+import Capacitor
 
 @objc(IAPPlugin)
-class IAPPlugin: CAPPlugin, SKProductsRequestDelegate, SKPaymentTransactionObserver {
+class IAPPlugin: CAPPlugin, SKProductsRequestDelegate, SKPaymentTransactionObserver, WKScriptMessageHandler {
     
     let productIDs: Set<String> = [
         "com.pizzafactory.coins100",
@@ -160,76 +162,150 @@ class IAPPlugin: CAPPlugin, SKProductsRequestDelegate, SKPaymentTransactionObser
     ]
     
     var products: [SKProduct] = []
-    var purchaseCall: CAPPluginCall?
     
     override func load() {
         SKPaymentQueue.default().add(self)
-        loadProducts()
-        
-        // Register the message handler on Capacitor's WebView
-        bridge?.webView?.configuration.userContentController.add(self as! WKScriptMessageHandler, name: "iap")
+        loadStoreProducts()
+        registerBridge()
     }
     
-    func loadProducts() {
+    private func registerBridge() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let webView = self.bridge?.webView else {
+                // WebView not ready yet, retry after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.registerBridge()
+                }
+                return
+            }
+            
+            // Register "iap" message handler on Capacitor's WebView
+            let ucc = webView.configuration.userContentController
+            ucc.add(self, name: "iap")
+            
+            // Inject flag as a user script so it's available on every page load
+            let script = WKUserScript(
+                source: "window.__iapBridgeAvailable = true;",
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+            ucc.addUserScript(script)
+            
+            // Also set it immediately for the current page
+            webView.evaluateJavaScript("window.__iapBridgeAvailable = true;", completionHandler: nil)
+            print("IAP: Bridge registered on WebView")
+        }
+    }
+    
+    func loadStoreProducts() {
         let request = SKProductsRequest(productIdentifiers: productIDs)
         request.delegate = self
         request.start()
+        print("IAP: Loading products...")
     }
     
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         products = response.products
         print("IAP: Loaded \(products.count) products")
+        for p in products {
+            print("IAP: Product: \(p.productIdentifier) - \(p.localizedTitle) - \(p.price)")
+        }
+        if !response.invalidProductIdentifiers.isEmpty {
+            print("IAP: Invalid product IDs: \(response.invalidProductIdentifiers)")
+        }
     }
     
-    @objc func purchase(_ call: CAPPluginCall) {
-        guard let productId = call.getString("productId") else {
-            call.reject("Missing productId")
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        print("IAP: Failed to load products: \(error.localizedDescription)")
+    }
+    
+    // MARK: - WKScriptMessageHandler (receives messages from JavaScript)
+    
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage) {
+        guard let body = message.body as? [String: Any],
+              let action = body["action"] as? String else {
+            print("IAP: Invalid message format")
             return
         }
+        
+        print("IAP: Received action: \(action)")
+        
+        switch action {
+        case "purchase":
+            if let productId = body["productId"] as? String {
+                purchaseProduct(productId: productId)
+            }
+        case "restore":
+            SKPaymentQueue.default().restoreCompletedTransactions()
+        default:
+            print("IAP: Unknown action: \(action)")
+        }
+    }
+    
+    func purchaseProduct(productId: String) {
         guard let product = products.first(where: { $0.productIdentifier == productId }) else {
-            call.reject("Product not found: \(productId)")
+            print("IAP: Product not found: \(productId). Available: \(products.map { $0.productIdentifier })")
+            sendCallbackToJS(function: "__iapCallback", success: false)
             return
         }
-        purchaseCall = call
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
+        print("IAP: Purchase started for \(productId)")
     }
     
-    @objc func restore(_ call: CAPPluginCall) {
-        purchaseCall = call
-        SKPaymentQueue.default().restoreCompletedTransactions()
-    }
+    // MARK: - SKPaymentTransactionObserver
     
     func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         for transaction in transactions {
             switch transaction.transactionState {
             case .purchased:
+                print("IAP: Purchase succeeded: \(transaction.payment.productIdentifier)")
                 SKPaymentQueue.default().finishTransaction(transaction)
-                sendToWebView(success: true)
-                purchaseCall?.resolve(["success": true])
-                purchaseCall = nil
+                sendCallbackToJS(function: "__iapCallback", success: true)
             case .failed:
+                print("IAP: Purchase failed: \(transaction.error?.localizedDescription ?? "unknown")")
                 SKPaymentQueue.default().finishTransaction(transaction)
-                sendToWebView(success: false)
-                purchaseCall?.reject("Purchase failed")
-                purchaseCall = nil
+                sendCallbackToJS(function: "__iapCallback", success: false)
             case .restored:
+                print("IAP: Purchase restored: \(transaction.payment.productIdentifier)")
                 SKPaymentQueue.default().finishTransaction(transaction)
-                sendToWebView(success: true)
-                purchaseCall?.resolve(["success": true])
-                purchaseCall = nil
-            default:
+                sendCallbackToJS(function: "__restoreCallback", success: true)
+            case .deferred:
+                print("IAP: Purchase deferred")
+            case .purchasing:
+                print("IAP: Purchase in progress...")
+            @unknown default:
                 break
             }
         }
     }
     
-    private func sendToWebView(success: Bool) {
+    func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
+        print("IAP: Restore completed")
+        sendCallbackToJS(function: "__restoreCallback", success: true)
+    }
+    
+    func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+        print("IAP: Restore failed: \(error.localizedDescription)")
+        sendCallbackToJS(function: "__restoreCallback", success: false)
+    }
+    
+    // MARK: - Send result back to JavaScript
+    
+    private func sendCallbackToJS(function: String, success: Bool) {
         DispatchQueue.main.async {
-            self.bridge?.webView?.evaluateJavaScript(
-                "window.__iapCallback && window.__iapCallback(\(success))"
-            )
+            let js = "window.\(function) && window.\(function)(\(success));"
+            self.bridge?.webView?.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("IAP: JS callback error: \(error.localizedDescription)")
+                }
+            }
         }
+    }
+    
+    deinit {
+        SKPaymentQueue.default().remove(self)
     }
 }
 ```
@@ -239,7 +315,7 @@ class IAPPlugin: CAPPlugin, SKProductsRequestDelegate, SKPaymentTransactionObser
 1. Right-click on the **App** folder again → **New File...**
 2. Choose **Objective-C File** → click Next
 3. Name it `IAPPlugin` → click Create
-4. If Xcode asks "Would you like to configure an Objective-C bridging header?" click **Create Bridging Header**
+4. If Xcode asks **"Would you like to configure an Objective-C bridging header?"** → click **Create Bridging Header**
 5. Replace the contents of `IAPPlugin.m` with:
 
 ```objc
@@ -251,9 +327,25 @@ CAP_PLUGIN(IAPPlugin, "IAPPlugin",
 )
 ```
 
+> **Important**: Make sure both files are inside the `App/App/` group in Xcode (not at the root level). They should appear alongside `AppDelegate.swift`.
+
 ### 7.2 - How It Works
 
-The game's JavaScript code (in `IAPBridge.ts`) sends purchase requests using WebKit message handlers. The native `IAPPlugin` receives these messages, processes the purchase through Apple's StoreKit, and sends the result back to the game via `window.__iapCallback`. This all happens automatically — you just need to add the files above.
+When the app starts:
+1. Capacitor loads the `IAPPlugin` automatically
+2. The plugin registers an "iap" message handler on the WebView and sets `window.__iapBridgeAvailable = true`
+3. It also loads the product list from the App Store
+4. When the player taps "Buy" in the game, JavaScript sends a message to `webkit.messageHandlers.iap`
+5. The native plugin receives it, processes the purchase through StoreKit, and sends the result back to JavaScript via `window.__iapCallback`
+
+### 7.3 - Debugging Tips
+
+After building and running, check the **Xcode Console** (bottom panel) for messages starting with `IAP:`. You should see:
+- `IAP: Bridge registered on WebView` — bridge is connected
+- `IAP: Loaded X products` — products loaded from App Store
+- `IAP: Received action: purchase` — when player taps buy
+
+If you see `IAP: Loaded 0 products`, it means your products aren't set up correctly in App Store Connect (see Step 8).
 
 ---
 
