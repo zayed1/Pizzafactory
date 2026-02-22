@@ -184,7 +184,7 @@ export const useOfficeGame = create<PizzaGameState>()(
     prepWorkTime: 4,
 
     tables: createTables(),
-    customerSpawnInterval: 6,
+    customerSpawnInterval: 4,
     customerPatience: 20,
     cashPerPizza: 25,
 
@@ -333,7 +333,7 @@ export const useOfficeGame = create<PizzaGameState>()(
         levelProgress: progress,
         pizzasForNextLevel: newPizzasForNext,
         cashPerPizza: 25 + (newLevel - 1) * 5,
-        customerSpawnInterval: Math.max(3, 6 - (newLevel - 1) * 0.3),
+        customerSpawnInterval: Math.max(2, 4 - (newLevel - 1) * 0.2),
       });
       return true;
     },

@@ -1,5 +1,19 @@
+import { useState, useEffect } from "react";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { useIAPStore } from "./IAPStore";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(
+      "ontouchstart" in window || window.innerWidth < 900
+    );
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
 
 export function GameHUD() {
   const money = useOfficeGame((s) => s.money);
@@ -21,6 +35,7 @@ export function GameHUD() {
   const gameStartTime = useOfficeGame((s) => s.gameStartTime);
   const unlockedTables = tables.filter((t) => t.unlocked).length;
   const totalTables = tables.length;
+  const isMobile = useIsMobile();
 
   const elapsed = gameStartTime > 0 ? Math.max(1, Math.floor((Date.now() - gameStartTime) / 60000)) : 1;
   const earningsPerMin = Math.round(totalMoneyEarned / elapsed);
@@ -54,25 +69,26 @@ export function GameHUD() {
       <div
         style={{
           position: "absolute",
-          top: 12,
-          left: 12,
+          top: isMobile ? 6 : 12,
+          left: isMobile ? 6 : 12,
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: isMobile ? 3 : 6,
           pointerEvents: "auto",
+          maxWidth: isMobile ? "45vw" : "auto",
         }}
       >
         <div
           style={{
             background: "rgba(0,0,0,0.75)",
-            borderRadius: 12,
-            padding: "10px 18px",
+            borderRadius: isMobile ? 8 : 12,
+            padding: isMobile ? "6px 12px" : "10px 18px",
             color: "#22c55e",
-            fontSize: 26,
+            fontSize: isMobile ? 18 : 26,
             fontWeight: "bold",
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 6,
             backdropFilter: "blur(10px)",
             border: "1px solid rgba(34,197,94,0.3)",
             cursor: "pointer",
@@ -81,24 +97,24 @@ export function GameHUD() {
         >
           <span>$</span>
           {money.toLocaleString()}
-          <span style={{ fontSize: 14, color: "#fbbf24", marginLeft: 4 }}>+</span>
+          <span style={{ fontSize: isMobile ? 10 : 14, color: "#fbbf24", marginLeft: 4 }}>+</span>
         </div>
 
         <div
           style={{
             background: "rgba(0,0,0,0.75)",
-            borderRadius: 10,
-            padding: "8px 14px",
+            borderRadius: 8,
+            padding: isMobile ? "4px 10px" : "8px 14px",
             color: carryColor,
-            fontSize: 14,
+            fontSize: isMobile ? 11 : 14,
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: 4,
             backdropFilter: "blur(10px)",
             border: `1px solid ${carryColor}33`,
           }}
         >
-          <span style={{ fontSize: 16 }}>{carrying === "none" ? "🤲" : carrying === "dough" ? "🫓" : "🍕"}</span>
+          <span style={{ fontSize: isMobile ? 12 : 16 }}>{carrying === "none" ? "🤲" : carrying === "dough" ? "🫓" : "🍕"}</span>
           {carryLabel}{carryCount > 1 ? ` x${carryCount}` : ""}
         </div>
 
@@ -106,63 +122,62 @@ export function GameHUD() {
           <div
             style={{
               background: "linear-gradient(135deg, rgba(249,115,22,0.8), rgba(234,88,12,0.8))",
-              borderRadius: 10,
-              padding: "6px 14px",
+              borderRadius: 8,
+              padding: isMobile ? "3px 8px" : "6px 14px",
               color: "#ffffff",
-              fontSize: 14,
+              fontSize: isMobile ? 11 : 14,
               fontWeight: "bold",
               display: "flex",
               alignItems: "center",
-              gap: 6,
+              gap: 4,
               backdropFilter: "blur(10px)",
               border: "1px solid rgba(249,115,22,0.5)",
-              animation: "pulse 1s ease-in-out infinite",
             }}
           >
-            <span style={{ fontSize: 18 }}>🔥</span>
-            Streak x{streak}
-            <span style={{ fontSize: 11, opacity: 0.8 }}>+${streak * 5} bonus</span>
+            <span style={{ fontSize: isMobile ? 13 : 18 }}>🔥</span>
+            x{streak}
+            {!isMobile && <span style={{ fontSize: 11, opacity: 0.8 }}>+${streak * 5} bonus</span>}
           </div>
         )}
 
         <div
           style={{
             background: "rgba(0,0,0,0.65)",
-            borderRadius: 8,
-            padding: "6px 12px",
+            borderRadius: 6,
+            padding: isMobile ? "3px 8px" : "6px 12px",
             color: "#94a3b8",
-            fontSize: 12,
+            fontSize: isMobile ? 9 : 12,
             display: "flex",
             flexDirection: "column",
-            gap: 4,
+            gap: 2,
             backdropFilter: "blur(10px)",
           }}
         >
-          <div style={{ display: "flex", gap: 12 }}>
-            <span style={{ color: "#22c55e" }}>Served: {totalPizzasServed}</span>
-            <span style={{ color: "#ef4444" }}>Missed: {missedCustomers}</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <span style={{ color: "#22c55e" }}>✓{totalPizzasServed}</span>
+            <span style={{ color: "#ef4444" }}>✗{missedCustomers}</span>
           </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 2 }}>
-            <span style={{ color: "#06b6d4" }}>${earningsPerMin}/min</span>
-            <span style={{ color: "#f97316" }}>Best: x{bestStreak}</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <span style={{ color: "#06b6d4" }}>${earningsPerMin}/m</span>
+            <span style={{ color: "#f97316" }}>🔥{bestStreak}</span>
           </div>
         </div>
 
         <div
           style={{
             background: "rgba(0,0,0,0.75)",
-            borderRadius: 10,
-            padding: "8px 14px",
+            borderRadius: 8,
+            padding: isMobile ? "4px 8px" : "8px 14px",
             backdropFilter: "blur(10px)",
             border: "1px solid rgba(168,85,247,0.3)",
           }}
         >
-          <div style={{ color: "#a855f7", fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>
-            Level {gameLevel}
+          <div style={{ color: "#a855f7", fontSize: isMobile ? 10 : 13, fontWeight: "bold", marginBottom: 2 }}>
+            Lv.{gameLevel}
           </div>
           <div style={{
             width: "100%",
-            height: 6,
+            height: isMobile ? 4 : 6,
             background: "rgba(255,255,255,0.1)",
             borderRadius: 3,
             overflow: "hidden",
@@ -175,50 +190,58 @@ export function GameHUD() {
               transition: "width 0.3s ease",
             }} />
           </div>
-          <div style={{ color: "#9ca3af", fontSize: 10, marginTop: 2 }}>
-            {levelProgress}/{pizzasForNextLevel} pizzas
+          <div style={{ color: "#9ca3af", fontSize: isMobile ? 8 : 10, marginTop: 2 }}>
+            {levelProgress}/{pizzasForNextLevel}
           </div>
         </div>
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          background: "rgba(0,0,0,0.75)",
-          borderRadius: 10,
-          padding: "8px 12px",
-          color: "#94a3b8",
-          fontSize: 12,
-          backdropFilter: "blur(10px)",
-          border: "1px solid rgba(148,163,184,0.15)",
-          lineHeight: 1.6,
-        }}
-      >
-        <div style={{ color: "#e2e8f0", fontWeight: 600, marginBottom: 2 }}>How to Play</div>
-        <div>WASD - Move</div>
-        <div>Q - Drop item</div>
-        <div>1. Pick dough from machine</div>
-        <div>2. Put in oven</div>
-        <div>3. Take pizza to prep</div>
-        <div>4. Deliver to customer</div>
-        <div style={{ marginTop: 4, color: "#f97316", fontSize: 11 }}>Serve fast for streak bonus!</div>
-        <div style={{ color: "#a855f7", fontSize: 11 }}>ESC - Pause & Stats</div>
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            background: "rgba(0,0,0,0.75)",
+            borderRadius: 10,
+            padding: "8px 12px",
+            color: "#94a3b8",
+            fontSize: 12,
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(148,163,184,0.15)",
+            lineHeight: 1.6,
+          }}
+        >
+          <div style={{ color: "#e2e8f0", fontWeight: 600, marginBottom: 2 }}>How to Play</div>
+          <div>WASD - Move</div>
+          <div>Q - Drop item</div>
+          <div>1. Pick dough from machine</div>
+          <div>2. Put in oven</div>
+          <div>3. Take pizza to prep</div>
+          <div>4. Deliver to customer</div>
+          <div style={{ marginTop: 4, color: "#f97316", fontSize: 11 }}>Serve fast for streak bonus!</div>
+          <div style={{ color: "#a855f7", fontSize: 11 }}>ESC - Pause & Stats</div>
+        </div>
+      )}
 
       <div
         style={{
           position: "absolute",
-          bottom: 12,
-          left: "50%",
-          transform: "translateX(-50%)",
+          bottom: isMobile ? 240 : 12,
+          left: isMobile ? 0 : 0,
+          right: 0,
           display: "flex",
-          gap: 6,
+          gap: isMobile ? 4 : 6,
           pointerEvents: "auto",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          maxWidth: "95vw",
+          justifyContent: isMobile ? "flex-start" : "center",
+          overflowX: isMobile ? "auto" : "visible",
+          overflowY: "hidden",
+          paddingLeft: isMobile ? 8 : 0,
+          paddingRight: isMobile ? 8 : 0,
+          paddingBottom: isMobile ? 4 : 0,
+          WebkitOverflowScrolling: "touch",
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          maxWidth: "100vw",
         }}
       >
         <UpgradeButton
@@ -229,6 +252,7 @@ export function GameHUD() {
           cost={upgrades.speed.cost}
           money={money}
           onClick={() => buyUpgrade("speed")}
+          compact={isMobile}
         />
         <UpgradeButton
           label="Carry"
@@ -238,6 +262,7 @@ export function GameHUD() {
           cost={upgrades.capacity.cost}
           money={money}
           onClick={() => buyUpgrade("capacity")}
+          compact={isMobile}
         />
         <UpgradeButton
           label="Oven"
@@ -247,6 +272,7 @@ export function GameHUD() {
           cost={upgrades.ovenSpeed.cost}
           money={money}
           onClick={() => buyUpgrade("ovenSpeed")}
+          compact={isMobile}
         />
         <UpgradeButton
           label="Dough"
@@ -256,6 +282,7 @@ export function GameHUD() {
           cost={upgrades.doughSpeed.cost}
           money={money}
           onClick={() => buyUpgrade("doughSpeed")}
+          compact={isMobile}
         />
         <UpgradeButton
           label="Prep"
@@ -265,38 +292,42 @@ export function GameHUD() {
           cost={upgrades.prepSpeed.cost}
           money={money}
           onClick={() => buyUpgrade("prepSpeed")}
+          compact={isMobile}
         />
         {ovens.length < 3 && (
           <UpgradeButton
-            label={`Oven ${ovens.length + 1}`}
+            label={`Oven+`}
             icon="🏭"
             level={upgrades.newOven.level}
             maxLevel={upgrades.newOven.maxLevel}
             cost={upgrades.newOven.cost}
             money={money}
             onClick={() => buyUpgrade("newOven")}
+            compact={isMobile}
           />
         )}
         {prepEmployees.length < 3 && (
           <UpgradeButton
-            label="Prep Staff"
+            label="Staff"
             icon="👨‍🍳"
             level={upgrades.prepEmployee.level}
             maxLevel={upgrades.prepEmployee.maxLevel}
             cost={upgrades.prepEmployee.cost}
             money={money}
             onClick={() => buyUpgrade("prepEmployee")}
+            compact={isMobile}
           />
         )}
         {unlockedTables < totalTables && (
           <UpgradeButton
-            label={`Table ${unlockedTables + 1}`}
+            label={`Table`}
             icon="🪑"
             level={upgrades.newTable.level}
             maxLevel={upgrades.newTable.maxLevel}
             cost={upgrades.newTable.cost}
             money={money}
             onClick={() => buyUpgrade("newTable")}
+            compact={isMobile}
           />
         )}
       </div>
@@ -319,6 +350,7 @@ function UpgradeButton({
   cost,
   money,
   onClick,
+  compact = false,
 }: {
   label: string;
   icon: string;
@@ -327,6 +359,7 @@ function UpgradeButton({
   cost: number;
   money: number;
   onClick: () => void;
+  compact?: boolean;
 }) {
   const maxed = level >= maxLevel;
   const canAfford = money >= cost && !maxed;
@@ -344,18 +377,19 @@ function UpgradeButton({
         border: maxed
           ? "2px solid #666"
           : canAfford ? "2px solid #f97316" : "2px solid #404040",
-        borderRadius: 10,
-        padding: "6px 10px",
+        borderRadius: compact ? 8 : 10,
+        padding: compact ? "4px 6px" : "6px 10px",
         color: canAfford ? "#ffffff" : "#6b7280",
         cursor: canAfford ? "pointer" : "not-allowed",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 2,
-        minWidth: 70,
+        gap: 1,
+        minWidth: compact ? 52 : 70,
+        flexShrink: 0,
         transition: "transform 0.15s, box-shadow 0.15s",
         backdropFilter: "blur(10px)",
-        fontSize: 11,
+        fontSize: compact ? 9 : 11,
         fontFamily: "'Inter', sans-serif",
         fontWeight: 600,
       }}
@@ -368,13 +402,13 @@ function UpgradeButton({
         (e.target as HTMLElement).style.transform = "scale(1)";
       }}
     >
-      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ fontSize: compact ? 14 : 18 }}>{icon}</span>
       <span>{label}</span>
-      <span style={{ fontSize: 10, opacity: 0.8 }}>
+      <span style={{ fontSize: compact ? 8 : 10, opacity: 0.8 }}>
         {maxed ? "MAX" : `Lv.${level}`}
       </span>
       {!maxed && (
-        <span style={{ fontSize: 10, color: canAfford ? "#fed7aa" : "#9ca3af" }}>
+        <span style={{ fontSize: compact ? 8 : 10, color: canAfford ? "#fed7aa" : "#9ca3af" }}>
           ${cost}
         </span>
       )}

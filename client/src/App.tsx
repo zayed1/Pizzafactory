@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import "@fontsource/inter";
 import { useOfficeGame } from "./lib/stores/useOfficeGame";
@@ -18,12 +18,31 @@ const keyMap = [
   { name: "drop", keys: ["KeyQ"] },
 ];
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(
+      "ontouchstart" in window || window.innerWidth < 900
+    );
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 function App() {
   const phase = useOfficeGame((s) => s.phase);
+  const isMobile = useIsMobile();
 
   if (phase === "menu") {
     return <StartMenu />;
   }
+
+  const cameraPosition: [number, number, number] = isMobile
+    ? [8, 20, 20]
+    : [8, 16, 16];
+  const cameraFov = isMobile ? 50 : 40;
 
   return (
     <KeyboardControls map={keyMap}>
@@ -31,8 +50,8 @@ function App() {
         <Canvas
           shadows
           camera={{
-            position: [8, 16, 16],
-            fov: 40,
+            position: cameraPosition,
+            fov: cameraFov,
             near: 0.1,
             far: 100,
           }}
@@ -43,7 +62,7 @@ function App() {
           style={{ background: "#1a0f0a" }}
         >
           <color attach="background" args={["#1a0f0a"]} />
-          <fog attach="fog" args={["#1a0f0a", 25, 40]} />
+          <fog attach="fog" args={["#1a0f0a", 30, 50]} />
           <Suspense fallback={null}>
             <OfficeScene />
           </Suspense>
