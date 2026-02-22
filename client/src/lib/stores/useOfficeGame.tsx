@@ -94,6 +94,7 @@ interface PizzaGameState {
   startGame: () => void;
   togglePause: () => void;
   dropItem: () => void;
+  addMoney: (amount: number) => void;
 
   pickupDough: () => boolean;
   placeDoughInOven: (ovenId: number) => boolean;
@@ -213,6 +214,11 @@ export const useOfficeGame = create<PizzaGameState>()(
       const s = get();
       if (s.phase === "playing") set({ phase: "paused" });
       else if (s.phase === "paused") set({ phase: "playing" });
+    },
+
+    addMoney: (amount: number) => {
+      const s = get();
+      set({ money: s.money + amount, totalMoneyEarned: s.totalMoneyEarned + amount });
     },
 
     dropItem: () => {

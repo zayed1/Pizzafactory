@@ -7,6 +7,8 @@ import { OfficeScene } from "./game/OfficeScene";
 import { GameHUD } from "./game/GameHUD";
 import { StartMenu } from "./game/StartMenu";
 import { PauseMenu } from "./game/PauseMenu";
+import { TouchControls } from "./game/TouchControls";
+import { CoinShop } from "./game/CoinShop";
 
 const keyMap = [
   { name: "forward", keys: ["KeyW", "ArrowUp"] },
@@ -48,6 +50,8 @@ function App() {
         </Canvas>
         <GameHUD />
         <PauseMenu />
+        <TouchControls />
+        <CoinShop />
       </div>
     </KeyboardControls>
   );

@@ -4,6 +4,7 @@
 A 3D browser-based idle/management game inspired by Office Fever but themed as a pizza factory. The player controls a chef who picks up dough, bakes it in the oven, sends it to prep employees for toppings, and delivers finished pizzas to customers before their patience runs out.
 
 ## Recent Changes
+- 2026-02-22: Mobile/iOS support - touch controls (virtual joystick), Capacitor iOS setup, in-app purchase system with coin packs, coin shop UI, drop item button
 - 2026-02-21: Second round improvements - particle effects (oven smoke/fire, money sparkles), pause menu with stats (ESC), customer variety (colors/moods/expressions), player walking animation, prep speed upgrade, earnings rate display
 - 2026-02-21: Major game improvements - sound effects, floating money popups, streak/combo system, level progression, multiple ovens (up to 3), guide arrows, improved HUD
 - 2026-02-21: Reorganized layout with 3 zones (Kitchen→Prep→Dining), added AABB collision system
@@ -38,7 +39,13 @@ A 3D browser-based idle/management game inspired by Office Fever but themed as a
   - `PauseMenu.tsx` - Pause screen with game statistics
   - `GameHUD.tsx` - UI overlay (money, carrying, upgrades, streak, level, $/min)
   - `StartMenu.tsx` - Start screen
+  - `TouchControls.tsx` - Virtual joystick and mobile buttons (auto-detected)
+  - `CoinShop.tsx` - In-app purchase coin shop UI
+  - `IAPStore.tsx` - IAP state management and purchase logic
+  - `IAPBridge.ts` - Native iOS purchase bridge (WebKit message handlers)
 - `client/src/lib/stores/useOfficeGame.tsx` - Game state store
+- `capacitor.config.ts` - Capacitor iOS configuration
+- `IOS_SETUP_GUIDE.md` - Complete iOS build and IAP setup instructions
 
 ### Game Flow
 1. Dough Maker produces dough automatically
@@ -78,6 +85,19 @@ A 3D browser-based idle/management game inspired by Office Fever but themed as a
 - **Pause Menu**: ESC key pauses game, shows statistics dashboard (earnings rate, success rate, best streak, factory status)
 - **Customer Variety**: Random customer colors and hair colors, mood expressions change based on patience (happy→neutral→worried→angry)
 - **Walking Animation**: Player character bobs and sways while moving, smooth rotation interpolation
+- **Touch Controls**: Virtual joystick (bottom-left), drop button (bottom-right), pause button (top-center) - auto-detected on touch devices
+- **Drop Item**: Press Q (keyboard) or X button (touch) to drop carried items
+- **Coin Shop**: Tap money display to open shop with 4 coin packs ($0.99-$19.99)
+- **In-App Purchases**: Product IDs configured for Apple App Store (com.pizzafactory.coins100/500/2000/5000)
+- **iOS Support**: Capacitor configured for iOS wrapping, WebKit bridge for native IAP
+
+### iOS Product IDs
+| Product ID | Coins | Price |
+|---|---|---|
+| com.pizzafactory.coins100 | $100 | $0.99 |
+| com.pizzafactory.coins500 | $500 | $3.99 |
+| com.pizzafactory.coins2000 | $2,000 | $9.99 |
+| com.pizzafactory.coins5000 | $5,000 | $19.99 |
 
 ## User Preferences
 - Arabic-speaking user

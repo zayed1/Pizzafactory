@@ -4,6 +4,7 @@ import { useKeyboardControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useOfficeGame, ItemType } from "../lib/stores/useOfficeGame";
 import { resolveCollision } from "./collisions";
+import { useTouchInput } from "./TouchControls";
 
 const ITEM_LABELS: Record<ItemType, string> = {
   none: "",
@@ -42,6 +43,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   useFrame((_, delta) => {
     if (!groupRef.current || phase !== "playing") return;
     const keys = getKeys() as any;
+    const touch = useTouchInput.getState();
     const direction = new THREE.Vector3();
 
     if (keys.forward) direction.z -= 1;
@@ -49,7 +51,12 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
     if (keys.left) direction.x -= 1;
     if (keys.right) direction.x += 1;
 
-    const isMoving = direction.length() > 0;
+    if (touch.active) {
+      direction.x += touch.dx;
+      direction.z += touch.dy;
+    }
+
+    const isMoving = direction.length() > 0.1;
 
     if (isMoving) {
       direction.normalize();

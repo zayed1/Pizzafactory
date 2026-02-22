@@ -1,4 +1,5 @@
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
+import { useIAPStore } from "./IAPStore";
 
 export function GameHUD() {
   const money = useOfficeGame((s) => s.money);
@@ -74,10 +75,13 @@ export function GameHUD() {
             gap: 8,
             backdropFilter: "blur(10px)",
             border: "1px solid rgba(34,197,94,0.3)",
+            cursor: "pointer",
           }}
+          onClick={() => useIAPStore.getState().openShop()}
         >
           <span>$</span>
           {money.toLocaleString()}
+          <span style={{ fontSize: 14, color: "#fbbf24", marginLeft: 4 }}>+</span>
         </div>
 
         <div
