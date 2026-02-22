@@ -183,12 +183,8 @@ export function OfficeFurniture() {
       <Fridge position={[-2.3, 0, -7.5]} />
       <Fridge position={[-2.3, 0, 5]} />
 
-      <KitchenDivider position={[3.5, 0, -3]} />
-      <KitchenDivider position={[3.5, 0, -1]} />
-      <KitchenDivider position={[3.5, 0, 1]} />
-
-      <HangingLight position={[1, 2.8, -5]} />
-      <HangingLight position={[1, 2.8, 2]} />
+      <HangingLight position={[1, 2.8, -1.5]} />
+      <HangingLight position={[5, 2.8, 0]} />
       <HangingLight position={[12, 2.8, -4.5]} />
       <HangingLight position={[12, 2.8, 1.5]} />
       <HangingLight position={[15.5, 2.8, -1.5]} />
@@ -204,9 +200,10 @@ export function OfficeFurniture() {
         {"Buon Appetito!"}
       </Text>
 
-      <FloorLabel position={[1, 0.02, -1.5]} text="KITCHEN" color="#f5deb3" />
-      <FloorLabel position={[7.5, 0.02, -3.5]} text="PREP" color="#a855f7" />
-      <FloorLabel position={[14, 0.02, 4]} text="DINING" color="#f97316" />
+      <FloorLabel position={[1, 0.02, 1]} text="DOUGH" color="#f5deb3" />
+      <FloorLabel position={[5, 0.02, 3.5]} text="OVEN" color="#f97316" />
+      <FloorLabel position={[9, 0.02, 3.5]} text="PREP" color="#a855f7" />
+      <FloorLabel position={[14, 0.02, 4]} text="DINING" color="#22c55e" />
     </group>
   );
 }

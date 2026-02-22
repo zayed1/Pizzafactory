@@ -114,18 +114,18 @@ interface PizzaGameState {
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
-  [12, 0, -4.5],
-  [12, 0, -1.5],
-  [12, 0, 1.5],
-  [15.5, 0, -4.5],
-  [15.5, 0, -1.5],
-  [15.5, 0, 1.5],
+  [13, 0, -4.5],
+  [13, 0, -1.5],
+  [13, 0, 1.5],
+  [16, 0, -4.5],
+  [16, 0, -1.5],
+  [16, 0, 1.5],
 ];
 
 export const OVEN_POSITIONS: [number, number, number][] = [
-  [1, 0, 0],
-  [1, 0, 2.8],
-  [1, 0, 5.2],
+  [5, 0, -3],
+  [5, 0, 0],
+  [5, 0, 3],
 ];
 
 const CUSTOMER_COLORS = ["#6b7280", "#4a5568", "#7c3aed", "#2563eb", "#dc2626", "#059669", "#d97706", "#ec4899"];
@@ -138,7 +138,7 @@ function createTables(): CustomerTable[] {
     unlocked: i < 1,
     hasCustomer: false,
     customerTimer: 0,
-    customerMaxTime: 15,
+    customerMaxTime: 20,
     served: false,
     customerColor: CUSTOMER_COLORS[0],
     customerHairColor: HAIR_COLORS[0],
@@ -174,24 +174,24 @@ export const useOfficeGame = create<PizzaGameState>()(
 
     doughReady: 3,
     maxDough: 8,
-    doughSpawnInterval: 3,
+    doughSpawnInterval: 2.5,
 
     ovens: createOvens(),
-    ovenCookTime: 4,
-    ovenCoolTime: 8,
+    ovenCookTime: 3,
+    ovenCoolTime: 12,
 
     prepEmployees: createPrepEmployees(),
-    prepWorkTime: 6,
+    prepWorkTime: 4,
 
     tables: createTables(),
-    customerSpawnInterval: 5,
-    customerPatience: 15,
-    cashPerPizza: 30,
+    customerSpawnInterval: 6,
+    customerPatience: 20,
+    cashPerPizza: 25,
 
     streak: 0,
     bestStreak: 0,
     lastServeTime: 0,
-    streakTimeout: 8,
+    streakTimeout: 10,
 
     gameLevel: 1,
     levelProgress: 0,
@@ -332,8 +332,8 @@ export const useOfficeGame = create<PizzaGameState>()(
         gameLevel: newLevel,
         levelProgress: progress,
         pizzasForNextLevel: newPizzasForNext,
-        cashPerPizza: 30 + (newLevel - 1) * 5,
-        customerSpawnInterval: Math.max(2, 5 - (newLevel - 1) * 0.3),
+        cashPerPizza: 25 + (newLevel - 1) * 5,
+        customerSpawnInterval: Math.max(3, 6 - (newLevel - 1) * 0.3),
       });
       return true;
     },
@@ -398,7 +398,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       const emptyTable = s.tables.find((t) => t.unlocked && !t.hasCustomer && !t.served);
       if (!emptyTable) return;
       const newTables = [...s.tables];
-      const patience = Math.max(8, s.customerPatience - (s.gameLevel - 1) * 0.5);
+      const patience = Math.max(10, s.customerPatience - (s.gameLevel - 1) * 0.5);
       const custColor = CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)];
       const hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
       newTables[emptyTable.id] = {
@@ -470,7 +470,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       } else if (type === "capacity") {
         updates.maxCarry = 1 + newLevel;
       } else if (type === "ovenSpeed") {
-        updates.ovenCookTime = Math.max(1, 4 - newLevel * 0.3);
+        updates.ovenCookTime = Math.max(1, 3 - newLevel * 0.2);
       } else if (type === "prepEmployee") {
         const newEmps = [...s.prepEmployees];
         newEmps.push({
@@ -489,7 +489,7 @@ export const useOfficeGame = create<PizzaGameState>()(
           updates.tables = newTables;
         }
       } else if (type === "doughSpeed") {
-        updates.doughSpawnInterval = Math.max(1, 3 - newLevel * 0.25);
+        updates.doughSpawnInterval = Math.max(0.8, 2.5 - newLevel * 0.2);
       } else if (type === "newOven") {
         const newOvens = [...s.ovens];
         newOvens.push({
@@ -502,7 +502,7 @@ export const useOfficeGame = create<PizzaGameState>()(
         });
         updates.ovens = newOvens;
       } else if (type === "prepSpeed") {
-        updates.prepWorkTime = Math.max(2, 6 - newLevel * 0.4);
+        updates.prepWorkTime = Math.max(1.5, 4 - newLevel * 0.3);
       }
 
       set(updates);

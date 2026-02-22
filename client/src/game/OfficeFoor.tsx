@@ -24,13 +24,13 @@ export function OfficeFloor() {
         </mesh>
       ))}
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[7.5, -0.01, -1]} receiveShadow>
-        <planeGeometry args={[5, 16]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[7, -0.01, -1]} receiveShadow>
+        <planeGeometry args={[6, 16]} />
         <meshStandardMaterial color="#c9b896" />
       </mesh>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14, -0.01, -1]} receiveShadow>
-        <planeGeometry args={[10, 16]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14.5, -0.01, -1]} receiveShadow>
+        <planeGeometry args={[9, 16]} />
         <meshStandardMaterial color="#5c3a1e" />
       </mesh>
 

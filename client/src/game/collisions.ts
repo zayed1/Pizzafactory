@@ -10,18 +10,14 @@ export interface CollisionBox {
 const PLAYER_RADIUS = 0.25;
 
 const STATIC_COLLISIONS: CollisionBox[] = [
-  { xMin: 1 - 0.8, xMax: 1 + 1.4, zMin: -5 - 0.5, zMax: -5 + 0.5 },
+  { xMin: 1 - 0.8, xMax: 1 + 1.4, zMin: -1.5 - 0.5, zMax: -1.5 + 0.5 },
 
-  { xMin: 5 - 0.9, xMax: 5 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
-  { xMin: 7.5 - 0.9, xMax: 7.5 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
-  { xMin: 10 - 0.9, xMax: 10 + 0.9, zMin: -6 - 0.6, zMax: -6 + 0.6 },
+  { xMin: 9 - 0.9, xMax: 9 + 0.9, zMin: -3 - 0.6, zMax: -3 + 0.6 },
+  { xMin: 9 - 0.9, xMax: 9 + 0.9, zMin: 0 - 0.6, zMax: 0 + 0.6 },
+  { xMin: 9 - 0.9, xMax: 9 + 0.9, zMin: 3 - 0.6, zMax: 3 + 0.6 },
 
   { xMin: -2.3 - 0.4, xMax: -2.3 + 0.4, zMin: -7.5 - 0.4, zMax: -7.5 + 0.4 },
   { xMin: -2.3 - 0.4, xMax: -2.3 + 0.4, zMin: 5 - 0.4, zMax: 5 + 0.4 },
-
-  { xMin: 3.5 - 0.15, xMax: 3.5 + 0.15, zMin: -3 - 0.5, zMax: -3 + 0.5 },
-  { xMin: 3.5 - 0.15, xMax: 3.5 + 0.15, zMin: -1 - 0.5, zMax: -1 + 0.5 },
-  { xMin: 3.5 - 0.15, xMax: 3.5 + 0.15, zMin: 1 - 0.5, zMax: 1 + 0.5 },
 ];
 
 export function getOvenCollisions(ovenCount: number): CollisionBox[] {
