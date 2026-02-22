@@ -126,10 +126,10 @@ function Joystick() {
       onTouchCancel={onTouchEnd}
       style={{
         position: "absolute",
-        bottom: 100,
-        left: 30,
-        width: 130,
-        height: 130,
+        bottom: 20,
+        left: "max(20px, env(safe-area-inset-left, 0px) + 10px)",
+        width: 120,
+        height: 120,
         borderRadius: "50%",
         background: "rgba(255,255,255,0.12)",
         border: "2px solid rgba(255,255,255,0.25)",
@@ -174,10 +174,10 @@ function DropButton() {
       }}
       style={{
         position: "absolute",
-        bottom: 140,
-        right: 30,
-        width: 70,
-        height: 70,
+        bottom: 20,
+        right: "max(20px, env(safe-area-inset-right, 0px) + 10px)",
+        width: 65,
+        height: 65,
         borderRadius: "50%",
         background: "rgba(239,68,68,0.7)",
         border: "2px solid rgba(239,68,68,0.9)",

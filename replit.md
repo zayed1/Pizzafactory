@@ -4,6 +4,7 @@
 A 3D browser-based idle/management game inspired by Office Fever but themed as a pizza factory. The player controls a chef who picks up dough, bakes it in the oven, sends it to prep employees for toppings, and delivers finished pizzas to customers before their patience runs out.
 
 ## Recent Changes
+- 2026-02-22: Landscape orientation - forced landscape on iOS (Capacitor + Xcode config), rotate-device screen for portrait browsers, adjusted camera/HUD/touch controls for landscape layout
 - 2026-02-22: Mobile/iOS support - touch controls (virtual joystick), Capacitor iOS setup, in-app purchase system with coin packs, coin shop UI, drop item button
 - 2026-02-21: Second round improvements - particle effects (oven smoke/fire, money sparkles), pause menu with stats (ESC), customer variety (colors/moods/expressions), player walking animation, prep speed upgrade, earnings rate display
 - 2026-02-21: Major game improvements - sound effects, floating money popups, streak/combo system, level progression, multiple ovens (up to 3), guide arrows, improved HUD

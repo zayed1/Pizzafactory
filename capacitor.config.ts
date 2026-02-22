@@ -11,6 +11,7 @@ const config: CapacitorConfig = {
     contentInset: "automatic",
     preferredContentMode: "mobile",
     scheme: "Pizza Factory",
+    allowsLinkPreview: false,
   },
 };
 

@@ -31,18 +31,94 @@ function useIsMobile() {
   return isMobile;
 }
 
+function useIsPortrait() {
+  const [isPortrait, setIsPortrait] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      setIsPortrait(isTouchDevice && window.innerHeight > window.innerWidth);
+    };
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
+  }, []);
+  return isPortrait;
+}
+
+function RotateScreen() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "linear-gradient(135deg, #1a0f0a 0%, #2d1810 50%, #1a0f0a 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        fontFamily: "'Inter', sans-serif",
+        color: "#fff",
+        gap: 24,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 64,
+          animation: "rotatePhone 2s ease-in-out infinite",
+        }}
+      >
+        📱
+      </div>
+      <div style={{ fontSize: 22, fontWeight: "bold", color: "#f97316" }}>
+        Rotate Your Device
+      </div>
+      <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", maxWidth: 260, lineHeight: 1.6 }}>
+        Pizza Factory works best in landscape mode. Please rotate your phone sideways to play.
+      </div>
+      <div
+        style={{
+          width: 80,
+          height: 2,
+          background: "linear-gradient(90deg, transparent, #f97316, transparent)",
+          marginTop: 8,
+        }}
+      />
+      <style>{`
+        @keyframes rotatePhone {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-30deg); }
+          75% { transform: rotate(-90deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function App() {
   const phase = useOfficeGame((s) => s.phase);
   const isMobile = useIsMobile();
+  const isPortrait = useIsPortrait();
+
+  if (isPortrait) {
+    return <RotateScreen />;
+  }
 
   if (phase === "menu") {
     return <StartMenu />;
   }
 
   const cameraPosition: [number, number, number] = isMobile
-    ? [8, 20, 20]
+    ? [8, 18, 16]
     : [8, 16, 16];
-  const cameraFov = isMobile ? 50 : 40;
+  const cameraFov = isMobile ? 45 : 40;
 
   return (
     <KeyboardControls map={keyMap}>

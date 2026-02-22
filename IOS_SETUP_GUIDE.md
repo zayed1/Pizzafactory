@@ -34,6 +34,11 @@ npx cap open ios
 - Set **Bundle Identifier** to: `com.pizzafactory.game`
 - Set **Display Name** to: `Pizza Factory`
 - Set minimum deployment target to iOS 15.0
+- **Force Landscape Orientation:**
+  - Go to your target → General → Deployment Info
+  - Uncheck "Portrait" orientation
+  - Keep only "Landscape Left" and "Landscape Right" checked
+  - Or in Info.plist, set `UISupportedInterfaceOrientations` to only include `UIInterfaceOrientationLandscapeLeft` and `UIInterfaceOrientationLandscapeRight`
 
 ### 5. Add In-App Purchase Capability
 - In Xcode, go to your target → "Signing & Capabilities"
