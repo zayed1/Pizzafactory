@@ -167,15 +167,19 @@ RevenueCat handles all the in-app purchase logic automatically. No Swift code ne
 
 3. For each product, select **App Store** as the store and enter the matching product ID
 
-### 7.4 - Create an Offering
+### 7.4 - Create an Offering (Required!)
+
+This step is critical — without it, purchases won't work.
 
 1. Go to **Offerings** in the left sidebar
 2. Click **+ New**
-3. Name it `default` (identifier: `default`)
-4. Add a **Package** for each coin pack:
+3. Set **Identifier** to `default` and **Description** to "Coin Packs"
+4. Click **Create**
+5. Add a **Package** for each coin pack:
    - Click **+ New Package** → choose **Custom** → name it (e.g., "100 Coins")
-   - Attach the matching product
-5. Repeat for all 4 coin packs
+   - Attach the matching product from the list
+6. Repeat for all 4 coin packs
+7. **Important**: Make sure this offering is set as the **Current Offering** (it should be by default if it's your only offering)
 
 ### 7.5 - Get Your API Key
 
