@@ -94,7 +94,7 @@ export function GameHUD() {
             border: `1px solid ${carryColor}33`,
           }}
         >
-          <span style={{ fontSize: 16 }}>{carrying === "none" ? "\uD83E\uDD32" : carrying === "dough" ? "\uD83E\uDED3" : "\uD83C\uDF55"}</span>
+          <span style={{ fontSize: 16 }}>{carrying === "none" ? "🤲" : carrying === "dough" ? "🫓" : "🍕"}</span>
           {carryLabel}{carryCount > 1 ? ` x${carryCount}` : ""}
         </div>
 
@@ -115,7 +115,7 @@ export function GameHUD() {
               animation: "pulse 1s ease-in-out infinite",
             }}
           >
-            <span style={{ fontSize: 18 }}>\uD83D\uDD25</span>
+            <span style={{ fontSize: 18 }}>🔥</span>
             Streak x{streak}
             <span style={{ fontSize: 11, opacity: 0.8 }}>+${streak * 5} bonus</span>
           </div>
@@ -219,7 +219,7 @@ export function GameHUD() {
       >
         <UpgradeButton
           label="Speed"
-          icon="\u26A1"
+          icon="⚡"
           level={upgrades.speed.level}
           maxLevel={upgrades.speed.maxLevel}
           cost={upgrades.speed.cost}
@@ -228,7 +228,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Carry"
-          icon="\uD83E\uDD32"
+          icon="🤲"
           level={upgrades.capacity.level}
           maxLevel={upgrades.capacity.maxLevel}
           cost={upgrades.capacity.cost}
@@ -237,7 +237,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Oven"
-          icon="\uD83D\uDD25"
+          icon="🔥"
           level={upgrades.ovenSpeed.level}
           maxLevel={upgrades.ovenSpeed.maxLevel}
           cost={upgrades.ovenSpeed.cost}
@@ -246,7 +246,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Dough"
-          icon="\uD83E\uDED3"
+          icon="🫓"
           level={upgrades.doughSpeed.level}
           maxLevel={upgrades.doughSpeed.maxLevel}
           cost={upgrades.doughSpeed.cost}
@@ -255,7 +255,7 @@ export function GameHUD() {
         />
         <UpgradeButton
           label="Prep"
-          icon="\u2702\uFE0F"
+          icon="✂️"
           level={upgrades.prepSpeed.level}
           maxLevel={upgrades.prepSpeed.maxLevel}
           cost={upgrades.prepSpeed.cost}
@@ -265,7 +265,7 @@ export function GameHUD() {
         {ovens.length < 3 && (
           <UpgradeButton
             label={`Oven ${ovens.length + 1}`}
-            icon="\uD83C\uDFED"
+            icon="🏭"
             level={upgrades.newOven.level}
             maxLevel={upgrades.newOven.maxLevel}
             cost={upgrades.newOven.cost}
@@ -276,7 +276,7 @@ export function GameHUD() {
         {prepEmployees.length < 3 && (
           <UpgradeButton
             label="Prep Staff"
-            icon="\uD83D\uDC68\u200D\uD83C\uDF73"
+            icon="👨‍🍳"
             level={upgrades.prepEmployee.level}
             maxLevel={upgrades.prepEmployee.maxLevel}
             cost={upgrades.prepEmployee.cost}
@@ -287,7 +287,7 @@ export function GameHUD() {
         {unlockedTables < totalTables && (
           <UpgradeButton
             label={`Table ${unlockedTables + 1}`}
-            icon="\uD83E\uDE91"
+            icon="🪑"
             level={upgrades.newTable.level}
             maxLevel={upgrades.newTable.maxLevel}
             cost={upgrades.newTable.cost}
