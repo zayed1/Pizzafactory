@@ -15,9 +15,9 @@ async function ensureConfigured(): Promise<boolean> {
   if (configured) return true;
   if (!isNativeApp()) return false;
 
-  const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY || "";
+  const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY || "appl_djWHVGaMeTnRUwUSzSPsrpzRcEA";
   if (!apiKey) {
-    configError = "RevenueCat API key not set. Add VITE_REVENUECAT_API_KEY and rebuild.";
+    configError = "RevenueCat API key not set.";
     console.error("RevenueCat:", configError);
     return false;
   }
