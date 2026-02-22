@@ -93,6 +93,7 @@ interface PizzaGameState {
 
   startGame: () => void;
   togglePause: () => void;
+  dropItem: () => void;
 
   pickupDough: () => boolean;
   placeDoughInOven: (ovenId: number) => boolean;
@@ -212,6 +213,16 @@ export const useOfficeGame = create<PizzaGameState>()(
       const s = get();
       if (s.phase === "playing") set({ phase: "paused" });
       else if (s.phase === "paused") set({ phase: "playing" });
+    },
+
+    dropItem: () => {
+      const s = get();
+      if (s.carrying === "none") return;
+      if (s.carrying === "dough") {
+        set({ carrying: "none", carryCount: 0, doughReady: Math.min(s.maxDough, s.doughReady + s.carryCount) });
+      } else {
+        set({ carrying: "none", carryCount: 0 });
+      }
     },
 
     pickupDough: () => {

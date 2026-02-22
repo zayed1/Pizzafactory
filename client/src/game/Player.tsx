@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle } from "react";
+import { useRef, forwardRef, useImperativeHandle, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls, Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -15,17 +15,29 @@ const ITEM_LABELS: Record<ItemType, string> = {
 export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
-  const [, getKeys] = useKeyboardControls();
+  const [subscribe, getKeys] = useKeyboardControls();
   const playerSpeed = useOfficeGame((s) => s.playerSpeed);
   const carrying = useOfficeGame((s) => s.carrying);
   const carryCount = useOfficeGame((s) => s.carryCount);
   const tables = useOfficeGame((s) => s.tables);
   const ovens = useOfficeGame((s) => s.ovens);
   const phase = useOfficeGame((s) => s.phase);
+  const dropItem = useOfficeGame((s) => s.dropItem);
   const bobTimer = useRef(0);
   const targetRotation = useRef(0);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
+
+  useEffect(() => {
+    return subscribe(
+      (state: any) => state.drop,
+      (pressed: boolean) => {
+        if (pressed && useOfficeGame.getState().phase === "playing") {
+          useOfficeGame.getState().dropItem();
+        }
+      }
+    );
+  }, [subscribe]);
 
   useFrame((_, delta) => {
     if (!groupRef.current || phase !== "playing") return;

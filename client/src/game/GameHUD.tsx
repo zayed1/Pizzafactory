@@ -194,6 +194,7 @@ export function GameHUD() {
       >
         <div style={{ color: "#e2e8f0", fontWeight: 600, marginBottom: 2 }}>How to Play</div>
         <div>WASD - Move</div>
+        <div>Q - Drop item</div>
         <div>1. Pick dough from machine</div>
         <div>2. Put in oven</div>
         <div>3. Take pizza to prep</div>

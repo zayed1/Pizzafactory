@@ -13,6 +13,7 @@ const keyMap = [
   { name: "back", keys: ["KeyS", "ArrowDown"] },
   { name: "left", keys: ["KeyA", "ArrowLeft"] },
   { name: "right", keys: ["KeyD", "ArrowRight"] },
+  { name: "drop", keys: ["KeyQ"] },
 ];
 
 function App() {
