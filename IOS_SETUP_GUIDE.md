@@ -36,10 +36,10 @@ cd ~/Downloads
 
 # 2. Unzip the project (replace the filename with your actual ZIP name)
 # Tip: type "unzip " then drag the ZIP file into Terminal to auto-fill the path
-unzip YourProjectName.zip -d ~/Desktop/PizzaFactory
+unzip Pizza-maker-2.zip -d ~/Desktop/PizzaFactory
 
 # 3. Go into the project folder
-cd ~/Desktop/PizzaFactory
+cd ~/Desktop/Pizza-
 
 # 4. Install all project dependencies (this may take 1-2 minutes)
 npm install
