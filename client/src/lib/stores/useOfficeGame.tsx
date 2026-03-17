@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { subscribeWithSelector } from "zustand/middleware";
+import { subscribeWithSelector, persist } from "zustand/middleware";
 
 export type GamePhase = "menu" | "playing" | "paused";
 export type CustomerMood = "happy" | "neutral" | "worried" | "angry";
@@ -158,6 +158,7 @@ function createOvens(): OvenState[] {
 }
 
 export const useOfficeGame = create<PizzaGameState>()(
+  persist(
   subscribeWithSelector((set, get) => ({
     phase: "menu",
     money: 0,
@@ -508,5 +509,59 @@ export const useOfficeGame = create<PizzaGameState>()(
       set(updates);
       return true;
     },
-  }))
+  })),
+  {
+    name: "pizza-factory-save",
+    partialize: (state) => ({
+      money: state.money,
+      totalMoneyEarned: state.totalMoneyEarned,
+      totalPizzasServed: state.totalPizzasServed,
+      missedCustomers: state.missedCustomers,
+      bestStreak: state.bestStreak,
+      gameLevel: state.gameLevel,
+      levelProgress: state.levelProgress,
+      pizzasForNextLevel: state.pizzasForNextLevel,
+      playerSpeed: state.playerSpeed,
+      maxCarry: state.maxCarry,
+      ovenCookTime: state.ovenCookTime,
+      doughSpawnInterval: state.doughSpawnInterval,
+      prepWorkTime: state.prepWorkTime,
+      cashPerPizza: state.cashPerPizza,
+      customerSpawnInterval: state.customerSpawnInterval,
+      upgrades: state.upgrades,
+      // Save counts to reconstruct ovens/employees/tables on load
+      _savedOvenCount: state.ovens.length,
+      _savedPrepCount: state.prepEmployees.length,
+      _savedUnlockedTables: state.tables.filter((t) => t.unlocked).length,
+    }),
+    onRehydrateStorage: () => (state) => {
+      if (!state) return;
+      const s = state as any;
+      // Reconstruct ovens based on saved count
+      if (s._savedOvenCount && s._savedOvenCount > 1) {
+        const ovens: OvenState[] = [];
+        for (let i = 0; i < s._savedOvenCount; i++) {
+          ovens.push({ id: i, hasDough: false, isCooking: false, cookProgress: 0, pizzaReady: false, pizzaCooling: 0 });
+        }
+        state.ovens = ovens;
+      }
+      // Reconstruct prep employees
+      if (s._savedPrepCount && s._savedPrepCount > 1) {
+        const emps: PrepEmployee[] = [];
+        for (let i = 0; i < s._savedPrepCount; i++) {
+          emps.push({ id: i, hasPizza: false, isWorking: false, workProgress: 0, pizzaReady: false });
+        }
+        state.prepEmployees = emps;
+      }
+      // Reconstruct unlocked tables
+      if (s._savedUnlockedTables && s._savedUnlockedTables > 1) {
+        const tables = createTables();
+        for (let i = 0; i < Math.min(s._savedUnlockedTables, tables.length); i++) {
+          tables[i].unlocked = true;
+        }
+        state.tables = tables;
+      }
+    },
+  }
+  )
 );
