@@ -84,6 +84,7 @@ interface PizzaGameState {
     speed: UpgradeInfo;
     capacity: UpgradeInfo;
     ovenSpeed: UpgradeInfo;
+    ovenCool: UpgradeInfo;
     prepEmployee: UpgradeInfo;
     newTable: UpgradeInfo;
     doughSpeed: UpgradeInfo;
@@ -179,7 +180,7 @@ export const useOfficeGame = create<PizzaGameState>()(
 
     ovens: createOvens(),
     ovenCookTime: 3,
-    ovenCoolTime: 12,
+    ovenCoolTime: 8,
 
     prepEmployees: createPrepEmployees(),
     prepWorkTime: 4,
@@ -192,7 +193,7 @@ export const useOfficeGame = create<PizzaGameState>()(
     streak: 0,
     bestStreak: 0,
     lastServeTime: 0,
-    streakTimeout: 10,
+    streakTimeout: 15,
 
     gameLevel: 1,
     levelProgress: 0,
@@ -202,10 +203,11 @@ export const useOfficeGame = create<PizzaGameState>()(
       speed: { level: 0, cost: 40, baseCost: 40, maxLevel: 10 },
       capacity: { level: 0, cost: 200, baseCost: 200, maxLevel: 3 },
       ovenSpeed: { level: 0, cost: 60, baseCost: 60, maxLevel: 8 },
+      ovenCool: { level: 0, cost: 70, baseCost: 70, maxLevel: 6 },
       prepEmployee: { level: 0, cost: 150, baseCost: 150, maxLevel: 2 },
       newTable: { level: 0, cost: 100, baseCost: 100, maxLevel: 5 },
       doughSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
-      newOven: { level: 0, cost: 250, baseCost: 250, maxLevel: 2 },
+      newOven: { level: 0, cost: 150, baseCost: 150, maxLevel: 2 },
       prepSpeed: { level: 0, cost: 80, baseCost: 80, maxLevel: 8 },
     },
 
@@ -317,7 +319,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       if (newProgress >= s.pizzasForNextLevel) {
         newLevel = s.gameLevel + 1;
         progress = 0;
-        newPizzasForNext = Math.floor(s.pizzasForNextLevel * 1.4);
+        newPizzasForNext = Math.floor(s.pizzasForNextLevel * 1.25);
       }
 
       set({
@@ -399,7 +401,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       const emptyTable = s.tables.find((t) => t.unlocked && !t.hasCustomer && !t.served);
       if (!emptyTable) return;
       const newTables = [...s.tables];
-      const patience = Math.max(10, s.customerPatience - (s.gameLevel - 1) * 0.5);
+      const patience = Math.max(14, s.customerPatience - (s.gameLevel - 1) * 0.4);
       const custColor = CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)];
       const hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
       newTables[emptyTable.id] = {
@@ -472,6 +474,8 @@ export const useOfficeGame = create<PizzaGameState>()(
         updates.maxCarry = 1 + newLevel;
       } else if (type === "ovenSpeed") {
         updates.ovenCookTime = Math.max(1, 3 - newLevel * 0.2);
+      } else if (type === "ovenCool") {
+        updates.ovenCoolTime = Math.max(4, 8 - newLevel * 0.7);
       } else if (type === "prepEmployee") {
         const newEmps = [...s.prepEmployees];
         newEmps.push({
@@ -524,6 +528,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       playerSpeed: state.playerSpeed,
       maxCarry: state.maxCarry,
       ovenCookTime: state.ovenCookTime,
+      ovenCoolTime: state.ovenCoolTime,
       doughSpawnInterval: state.doughSpawnInterval,
       prepWorkTime: state.prepWorkTime,
       cashPerPizza: state.cashPerPizza,

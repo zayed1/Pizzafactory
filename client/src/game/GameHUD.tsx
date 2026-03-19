@@ -318,6 +318,16 @@ export function GameHUD() {
               compact={isMobile}
             />
             <UpgradeButton
+              label="Cool"
+              icon="\u2744\uFE0F"
+              level={upgrades.ovenCool.level}
+              maxLevel={upgrades.ovenCool.maxLevel}
+              cost={upgrades.ovenCool.cost}
+              money={money}
+              onClick={() => buyUpgrade("ovenCool")}
+              compact={isMobile}
+            />
+            <UpgradeButton
               label="Dough"
               icon="\u{1FAD3}"
               level={upgrades.doughSpeed.level}
