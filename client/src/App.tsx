@@ -116,8 +116,8 @@ function App() {
   }
 
   const cameraPosition: [number, number, number] = isMobile
-    ? [8, 18, 16]
-    : [8, 16, 16];
+    ? [6.5, 14, 13]
+    : [6.5, 12, 13];
   const cameraFov = isMobile ? 45 : 40;
 
   return (
@@ -138,7 +138,7 @@ function App() {
           style={{ background: "#1a0f0a" }}
         >
           <color attach="background" args={["#1a0f0a"]} />
-          <fog attach="fog" args={["#1a0f0a", 30, 50]} />
+          <fog attach="fog" args={["#1a0f0a", 20, 40]} />
           <Suspense fallback={null}>
             <OfficeScene />
           </Suspense>

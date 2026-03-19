@@ -130,12 +130,12 @@ export function GuideArrows() {
   const tables = useOfficeGame((s) => s.tables);
   const doughReady = useOfficeGame((s) => s.doughReady);
 
-  const doughPos: [number, number, number] = [1, 0, -1.5];
+  const doughPos: [number, number, number] = [1.5, 0, 0];
   const freeOvenIdx = ovens.findIndex(o => !o.hasDough && !o.isCooking && !o.pizzaReady);
   const readyOvenIdx = ovens.findIndex(o => o.pizzaReady);
   const ovenPos = OVEN_POSITIONS[freeOvenIdx >= 0 ? freeOvenIdx : 0];
   const readyOvenPos = OVEN_POSITIONS[readyOvenIdx >= 0 ? readyOvenIdx : 0];
-  const PREP_POS: [number, number, number][] = [[9, 0, -3], [9, 0, 0], [9, 0, 3]];
+  const PREP_POS: [number, number, number][] = [[7, 0, -2.5], [7, 0, 0], [7, 0, 2.5]];
   const freePrepIdx = prepEmployees.findIndex(e => !e.hasPizza && !e.isWorking && !e.pizzaReady);
   const prepPos: [number, number, number] = freePrepIdx >= 0 ? PREP_POS[freePrepIdx] : PREP_POS[0];
   const readyPrepIdx = prepEmployees.findIndex(e => e.pizzaReady);
@@ -143,7 +143,7 @@ export function GuideArrows() {
   const activeTable = tables.find(t => t.unlocked && t.hasCustomer && !t.served);
   const tablePos: [number, number, number] = activeTable
     ? activeTable.position
-    : [13, 0, -1.5];
+    : [10, 0, 0];
 
   const anyOvenReady = readyOvenIdx >= 0;
   const anyPrepReady = readyPrepIdx >= 0;

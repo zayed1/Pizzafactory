@@ -65,12 +65,12 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       let newX = currentX + direction.x * playerSpeed * delta;
       let newZ = currentZ + direction.z * playerSpeed * delta;
 
-      newX = Math.max(-1.5, Math.min(18.5, newX));
-      newZ = Math.max(-7.5, Math.min(6.5, newZ));
+      newX = Math.max(-0.5, Math.min(13.5, newX));
+      newZ = Math.max(-5.5, Math.min(5.5, newZ));
 
       const [resolvedX, resolvedZ] = resolveCollision(currentX, currentZ, newX, newZ, tables, ovens.length);
-      groupRef.current.position.x = Math.max(-1.5, Math.min(18.5, resolvedX));
-      groupRef.current.position.z = Math.max(-7.5, Math.min(6.5, resolvedZ));
+      groupRef.current.position.x = Math.max(-0.5, Math.min(13.5, resolvedX));
+      groupRef.current.position.z = Math.max(-5.5, Math.min(5.5, resolvedZ));
 
       targetRotation.current = Math.atan2(direction.x, direction.z);
 
@@ -95,7 +95,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   });
 
   return (
-    <group ref={groupRef} position={[5, 0, 0]}>
+    <group ref={groupRef} position={[4, 0, 0]}>
       <group ref={bodyRef}>
       <mesh position={[0, 0.15, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />

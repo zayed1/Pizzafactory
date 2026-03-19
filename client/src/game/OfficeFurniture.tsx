@@ -138,21 +138,6 @@ function Fridge({ position }: { position: [number, number, number] }) {
   );
 }
 
-function KitchenDivider({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.15, 1.0, 0.8]} />
-        <meshStandardMaterial color="#d4d4d8" metalness={0.2} />
-      </mesh>
-      <mesh position={[0, 1.02, 0]}>
-        <boxGeometry args={[0.2, 0.04, 0.85]} />
-        <meshStandardMaterial color="#a1a1aa" metalness={0.3} />
-      </mesh>
-    </group>
-  );
-}
-
 function FloorLabel({ position, text, color }: { position: [number, number, number]; text: string; color: string }) {
   return (
     <Text
@@ -174,36 +159,43 @@ function FloorLabel({ position, text, color }: { position: [number, number, numb
 export function OfficeFurniture() {
   return (
     <group>
-      <KitchenShelf position={[-2.7, 1.8, -3]} />
-      <KitchenShelf position={[-2.7, 2.3, -3]} />
-      <KitchenShelf position={[-2.7, 1.8, 0]} />
+      {/* Kitchen shelves on left wall */}
+      <KitchenShelf position={[-0.7, 1.8, -2.5]} />
+      <KitchenShelf position={[-0.7, 2.3, -2.5]} />
+      <KitchenShelf position={[-0.7, 1.8, 2.5]} />
 
-      <MenuBoard position={[14, 2.0, -8.7]} />
+      {/* Menu board on back wall */}
+      <MenuBoard position={[11, 2.0, -5.7]} />
 
-      <Fridge position={[-2.3, 0, -7.5]} />
-      <Fridge position={[-2.3, 0, 5]} />
+      {/* Fridges on left wall */}
+      <Fridge position={[-0.3, 0, -4.5]} />
+      <Fridge position={[-0.3, 0, 4.5]} />
 
-      <HangingLight position={[1, 2.8, -1.5]} />
-      <HangingLight position={[5, 2.8, 0]} />
-      <HangingLight position={[12, 2.8, -4.5]} />
-      <HangingLight position={[12, 2.8, 1.5]} />
-      <HangingLight position={[15.5, 2.8, -1.5]} />
+      {/* Hanging lights */}
+      <HangingLight position={[1.5, 2.8, 0]} />
+      <HangingLight position={[4, 2.8, 0]} />
+      <HangingLight position={[7, 2.8, 0]} />
+      <HangingLight position={[10, 2.8, -2.5]} />
+      <HangingLight position={[10, 2.8, 2.5]} />
 
-      <WallDecor position={[18.8, 1.8, -5]} />
-      <WallDecor position={[18.8, 1.8, 2]} />
+      {/* Wall decor on right wall */}
+      <WallDecor position={[13.8, 1.8, -3]} />
+      <WallDecor position={[13.8, 1.8, 3]} />
 
-      <mesh position={[18.8, 1.5, -1.5]} rotation={[0, -Math.PI / 2, 0]}>
+      {/* Buon Appetito sign on right wall */}
+      <mesh position={[13.8, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[1.2, 0.8, 0.04]} />
         <meshStandardMaterial color="#3c1a00" />
       </mesh>
-      <Text position={[18.75, 1.5, -1.5]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.12} color="#fef3c7" anchorX="center">
+      <Text position={[13.75, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.12} color="#fef3c7" anchorX="center">
         {"Buon Appetito!"}
       </Text>
 
-      <FloorLabel position={[1, 0.02, 1]} text="DOUGH" color="#f5deb3" />
-      <FloorLabel position={[5, 0.02, 3.5]} text="OVEN" color="#f97316" />
-      <FloorLabel position={[9, 0.02, 3.5]} text="PREP" color="#a855f7" />
-      <FloorLabel position={[14, 0.02, 4]} text="DINING" color="#22c55e" />
+      {/* Floor zone labels */}
+      <FloorLabel position={[1.5, 0.02, 2]} text="DOUGH" color="#f5deb3" />
+      <FloorLabel position={[4, 0.02, 4.5]} text="OVEN" color="#f97316" />
+      <FloorLabel position={[7, 0.02, 4.5]} text="PREP" color="#a855f7" />
+      <FloorLabel position={[11, 0.02, 4.5]} text="DINING" color="#22c55e" />
     </group>
   );
 }

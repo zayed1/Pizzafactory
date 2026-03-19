@@ -3,12 +3,12 @@ import { useMemo } from "react";
 export function OfficeFloor() {
   const kitchenTiles = useMemo(() => {
     const tiles: { color: string; x: number; z: number }[] = [];
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 8; j++) {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 6; j++) {
         tiles.push({
           color: (i + j) % 2 === 0 ? "#e8e0d4" : "#d4c8b8",
-          x: -2 + i * 2,
-          z: -8 + j * 2,
+          x: -1 + i * 2,
+          z: -5 + j * 2,
         });
       }
     }
@@ -17,6 +17,7 @@ export function OfficeFloor() {
 
   return (
     <group>
+      {/* Kitchen floor tiles (left zone) */}
       {kitchenTiles.map((tile, idx) => (
         <mesh key={`kt-${idx}`} rotation={[-Math.PI / 2, 0, 0]} position={[tile.x, -0.01, tile.z]} receiveShadow>
           <planeGeometry args={[2, 2]} />
@@ -24,45 +25,54 @@ export function OfficeFloor() {
         </mesh>
       ))}
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[7, -0.01, -1]} receiveShadow>
-        <planeGeometry args={[6, 16]} />
+      {/* Corridor / work area (center) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.5, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[6, 12]} />
         <meshStandardMaterial color="#c9b896" />
       </mesh>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14.5, -0.01, -1]} receiveShadow>
-        <planeGeometry args={[9, 16]} />
+      {/* Dining area (right zone) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[11.5, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[6, 12]} />
         <meshStandardMaterial color="#5c3a1e" />
       </mesh>
 
-      <mesh position={[-3, 1.5, -1]}>
-        <boxGeometry args={[0.25, 3, 16]} />
+      {/* Left wall */}
+      <mesh position={[-1, 1.5, 0]}>
+        <boxGeometry args={[0.25, 3, 12]} />
         <meshStandardMaterial color="#f5e6d0" />
       </mesh>
-      <mesh position={[19, 1.5, -1]}>
-        <boxGeometry args={[0.25, 3, 16]} />
+      {/* Right wall */}
+      <mesh position={[14, 1.5, 0]}>
+        <boxGeometry args={[0.25, 3, 12]} />
         <meshStandardMaterial color="#8b4513" />
       </mesh>
-      <mesh position={[8, 1.5, -9]}>
-        <boxGeometry args={[22.4, 3, 0.25]} />
+      {/* Back wall */}
+      <mesh position={[6.5, 1.5, -6]}>
+        <boxGeometry args={[15.2, 3, 0.25]} />
         <meshStandardMaterial color="#c9a87c" />
       </mesh>
-      <mesh position={[8, 1.5, 7.5]}>
-        <boxGeometry args={[22.4, 3, 0.25]} />
+      {/* Front wall */}
+      <mesh position={[6.5, 1.5, 6]}>
+        <boxGeometry args={[15.2, 3, 0.25]} />
         <meshStandardMaterial color="#c9a87c" />
       </mesh>
 
-      <mesh position={[-2.85, 1.8, -1]}>
-        <boxGeometry args={[0.05, 0.6, 15.5]} />
+      {/* Wall trim - left */}
+      <mesh position={[-0.85, 1.8, 0]}>
+        <boxGeometry args={[0.05, 0.6, 11.5]} />
         <meshStandardMaterial color="#4a7c59" />
       </mesh>
 
-      <mesh position={[8, 1.5, -8.85]}>
-        <boxGeometry args={[22, 0.6, 0.05]} />
+      {/* Wall trim - back */}
+      <mesh position={[6.5, 1.5, -5.85]}>
+        <boxGeometry args={[14.8, 0.6, 0.05]} />
         <meshStandardMaterial color="#4a7c59" />
       </mesh>
 
-      <mesh position={[8, 2.99, -1]}>
-        <boxGeometry args={[22.2, 0.05, 15.8]} />
+      {/* Ceiling */}
+      <mesh position={[6.5, 2.99, 0]}>
+        <boxGeometry args={[15.2, 0.05, 12.2]} />
         <meshStandardMaterial color="#f5eedc" opacity={0.2} transparent />
       </mesh>
     </group>
