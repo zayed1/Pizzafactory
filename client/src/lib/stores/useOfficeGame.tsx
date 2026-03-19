@@ -136,7 +136,7 @@ function createTables(): CustomerTable[] {
   return TABLE_POSITIONS.map((pos, i) => ({
     id: i,
     position: pos,
-    unlocked: i < 1,
+    unlocked: i < 2,
     hasCustomer: false,
     customerTimer: 0,
     customerMaxTime: 20,
@@ -172,21 +172,21 @@ export const useOfficeGame = create<PizzaGameState>()(
     carryCount: 0,
     maxCarry: 1,
 
-    playerSpeed: 4,
+    playerSpeed: 4.5,
 
-    doughReady: 3,
+    doughReady: 5,
     maxDough: 8,
-    doughSpawnInterval: 2.5,
+    doughSpawnInterval: 2,
 
     ovens: createOvens(),
-    ovenCookTime: 3,
+    ovenCookTime: 2,
     ovenCoolTime: 8,
 
     prepEmployees: createPrepEmployees(),
-    prepWorkTime: 4,
+    prepWorkTime: 2.5,
 
     tables: createTables(),
-    customerSpawnInterval: 4,
+    customerSpawnInterval: 3,
     customerPatience: 20,
     cashPerPizza: 25,
 
@@ -200,15 +200,15 @@ export const useOfficeGame = create<PizzaGameState>()(
     pizzasForNextLevel: 5,
 
     upgrades: {
-      speed: { level: 0, cost: 40, baseCost: 40, maxLevel: 10 },
-      capacity: { level: 0, cost: 200, baseCost: 200, maxLevel: 3 },
-      ovenSpeed: { level: 0, cost: 60, baseCost: 60, maxLevel: 8 },
-      ovenCool: { level: 0, cost: 70, baseCost: 70, maxLevel: 6 },
-      prepEmployee: { level: 0, cost: 150, baseCost: 150, maxLevel: 2 },
-      newTable: { level: 0, cost: 100, baseCost: 100, maxLevel: 5 },
-      doughSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
-      newOven: { level: 0, cost: 150, baseCost: 150, maxLevel: 2 },
-      prepSpeed: { level: 0, cost: 80, baseCost: 80, maxLevel: 8 },
+      speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
+      capacity: { level: 0, cost: 150, baseCost: 150, maxLevel: 3 },
+      ovenSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
+      ovenCool: { level: 0, cost: 60, baseCost: 60, maxLevel: 6 },
+      prepEmployee: { level: 0, cost: 120, baseCost: 120, maxLevel: 2 },
+      newTable: { level: 0, cost: 75, baseCost: 75, maxLevel: 4 },
+      doughSpeed: { level: 0, cost: 40, baseCost: 40, maxLevel: 8 },
+      newOven: { level: 0, cost: 120, baseCost: 120, maxLevel: 2 },
+      prepSpeed: { level: 0, cost: 60, baseCost: 60, maxLevel: 8 },
     },
 
     startGame: () => set({ phase: "playing", gameStartTime: Date.now() }),
@@ -336,7 +336,7 @@ export const useOfficeGame = create<PizzaGameState>()(
         levelProgress: progress,
         pizzasForNextLevel: newPizzasForNext,
         cashPerPizza: 25 + (newLevel - 1) * 5,
-        customerSpawnInterval: Math.max(2, 4 - (newLevel - 1) * 0.2),
+        customerSpawnInterval: Math.max(1.5, 3 - (newLevel - 1) * 0.15),
       });
       return true;
     },
@@ -469,11 +469,11 @@ export const useOfficeGame = create<PizzaGameState>()(
       };
 
       if (type === "speed") {
-        updates.playerSpeed = 4 + newLevel * 0.7;
+        updates.playerSpeed = 4.5 + newLevel * 0.6;
       } else if (type === "capacity") {
         updates.maxCarry = 1 + newLevel;
       } else if (type === "ovenSpeed") {
-        updates.ovenCookTime = Math.max(1, 3 - newLevel * 0.2);
+        updates.ovenCookTime = Math.max(0.8, 2 - newLevel * 0.15);
       } else if (type === "ovenCool") {
         updates.ovenCoolTime = Math.max(4, 8 - newLevel * 0.7);
       } else if (type === "prepEmployee") {
@@ -494,7 +494,7 @@ export const useOfficeGame = create<PizzaGameState>()(
           updates.tables = newTables;
         }
       } else if (type === "doughSpeed") {
-        updates.doughSpawnInterval = Math.max(0.8, 2.5 - newLevel * 0.2);
+        updates.doughSpawnInterval = Math.max(0.6, 2 - newLevel * 0.15);
       } else if (type === "newOven") {
         const newOvens = [...s.ovens];
         newOvens.push({
@@ -507,7 +507,7 @@ export const useOfficeGame = create<PizzaGameState>()(
         });
         updates.ovens = newOvens;
       } else if (type === "prepSpeed") {
-        updates.prepWorkTime = Math.max(1.5, 4 - newLevel * 0.3);
+        updates.prepWorkTime = Math.max(1, 2.5 - newLevel * 0.2);
       }
 
       set(updates);
