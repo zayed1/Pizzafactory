@@ -4,6 +4,33 @@ import { subscribeWithSelector, persist } from "zustand/middleware";
 export type GamePhase = "menu" | "playing" | "paused";
 export type CustomerMood = "happy" | "neutral" | "worried" | "angry";
 export type ItemType = "none" | "dough" | "pizza_raw" | "pizza_ready";
+export type CustomerType = "normal" | "vip" | "patient" | "rush" | "tipper";
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  reward: number;
+  unlocked: boolean;
+  check: (state: PizzaGameState) => boolean;
+}
+
+export interface GameEvent {
+  type: "rush_hour" | "double_pay" | "tips_rain";
+  name: string;
+  icon: string;
+  duration: number;
+  remaining: number;
+}
+
+export interface Notification {
+  id: number;
+  text: string;
+  icon: string;
+  color: string;
+  time: number;
+}
 
 export interface PrepEmployee {
   id: number;
@@ -23,6 +50,7 @@ export interface CustomerTable {
   served: boolean;
   customerColor: string;
   customerHairColor: string;
+  customerType: CustomerType;
 }
 
 export interface OvenState {
@@ -80,6 +108,15 @@ interface PizzaGameState {
   levelProgress: number;
   pizzasForNextLevel: number;
 
+  // Fun systems
+  showLevelUp: boolean;
+  levelUpLevel: number;
+  activeEvent: GameEvent | null;
+  notifications: Notification[];
+  achievements: Record<string, boolean>;
+  comboTimer: number;
+  comboCount: number;
+
   upgrades: {
     speed: UpgradeInfo;
     capacity: UpgradeInfo;
@@ -112,6 +149,11 @@ interface PizzaGameState {
   updateStreak: (delta: number) => void;
 
   buyUpgrade: (type: keyof PizzaGameState["upgrades"]) => boolean;
+  dismissLevelUp: () => void;
+  addNotification: (text: string, icon: string, color: string) => void;
+  updateEvent: (delta: number) => void;
+  triggerRandomEvent: () => void;
+  checkAchievements: () => void;
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
@@ -143,8 +185,23 @@ function createTables(): CustomerTable[] {
     served: false,
     customerColor: CUSTOMER_COLORS[0],
     customerHairColor: HAIR_COLORS[0],
+    customerType: "normal" as CustomerType,
   }));
 }
+
+const ACHIEVEMENT_DEFS: { id: string; name: string; description: string; icon: string; reward: number; check: (s: PizzaGameState) => boolean }[] = [
+  { id: "first_pizza", name: "First Pizza!", description: "Serve your first pizza", icon: "\u{1F355}", reward: 10, check: (s) => s.totalPizzasServed >= 1 },
+  { id: "pizza_10", name: "Pizza Pro", description: "Serve 10 pizzas", icon: "\u{1F3C6}", reward: 50, check: (s) => s.totalPizzasServed >= 10 },
+  { id: "pizza_50", name: "Master Chef", description: "Serve 50 pizzas", icon: "\u{1F468}\u200D\u{1F373}", reward: 200, check: (s) => s.totalPizzasServed >= 50 },
+  { id: "pizza_100", name: "Pizza Legend", description: "Serve 100 pizzas", icon: "\u{1F451}", reward: 500, check: (s) => s.totalPizzasServed >= 100 },
+  { id: "streak_5", name: "On Fire!", description: "Get a 5x streak", icon: "\u{1F525}", reward: 30, check: (s) => s.bestStreak >= 5 },
+  { id: "streak_10", name: "Unstoppable", description: "Get a 10x streak", icon: "\u{1F4A5}", reward: 100, check: (s) => s.bestStreak >= 10 },
+  { id: "rich_500", name: "Getting Rich", description: "Earn $500 total", icon: "\u{1F4B0}", reward: 50, check: (s) => s.totalMoneyEarned >= 500 },
+  { id: "rich_2000", name: "Pizza Tycoon", description: "Earn $2000 total", icon: "\u{1F911}", reward: 200, check: (s) => s.totalMoneyEarned >= 2000 },
+  { id: "level_5", name: "Rising Star", description: "Reach Level 5", icon: "\u{2B50}", reward: 100, check: (s) => s.gameLevel >= 5 },
+  { id: "level_10", name: "Pizza Empire", description: "Reach Level 10", icon: "\u{1F3F0}", reward: 300, check: (s) => s.gameLevel >= 10 },
+  { id: "no_miss_10", name: "Perfect Service", description: "Serve 10 in a row without missing", icon: "\u{2705}", reward: 75, check: (s) => s.streak >= 10 && s.missedCustomers === 0 },
+];
 
 function createPrepEmployees(): PrepEmployee[] {
   return [
@@ -198,6 +255,14 @@ export const useOfficeGame = create<PizzaGameState>()(
     gameLevel: 1,
     levelProgress: 0,
     pizzasForNextLevel: 5,
+
+    showLevelUp: false,
+    levelUpLevel: 0,
+    activeEvent: null,
+    notifications: [],
+    achievements: {},
+    comboTimer: 0,
+    comboCount: 0,
 
     upgrades: {
       speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
@@ -308,21 +373,42 @@ export const useOfficeGame = create<PizzaGameState>()(
       newTables[tableId] = { ...table, served: true, hasCustomer: false, customerTimer: 0 };
 
       const streakBonus = Math.min(s.streak, 10);
-      const cash = s.cashPerPizza + streakBonus * 5;
+      let cash = s.cashPerPizza + streakBonus * 5;
+
+      // Customer type bonuses
+      if (table.customerType === "vip") cash = Math.floor(cash * 2.5);
+      else if (table.customerType === "rush") cash = Math.floor(cash * 1.5);
+      else if (table.customerType === "tipper") cash += Math.floor(Math.random() * 20) + 10;
+
+      // Active event bonuses
+      if (s.activeEvent?.type === "double_pay") cash *= 2;
+      if (s.activeEvent?.type === "tips_rain") cash += 15;
+
+      // Combo bonus (deliver multiple within 3s)
+      const now = Date.now();
+      const comboActive = now - s.comboTimer < 3000;
+      const newCombo = comboActive ? s.comboCount + 1 : 1;
+      if (newCombo >= 3) cash += newCombo * 8;
+
+      // Speed bonus - deliver before half patience
+      const patienceRatio = 1 - table.customerTimer / table.customerMaxTime;
+      if (patienceRatio > 0.75) cash += 10;
 
       const newServed = s.totalPizzasServed + 1;
       const newProgress = s.levelProgress + 1;
       let newLevel = s.gameLevel;
       let newPizzasForNext = s.pizzasForNextLevel;
       let progress = newProgress;
+      let leveledUp = false;
 
       if (newProgress >= s.pizzasForNextLevel) {
         newLevel = s.gameLevel + 1;
         progress = 0;
         newPizzasForNext = Math.floor(s.pizzasForNextLevel * 1.25);
+        leveledUp = true;
       }
 
-      set({
+      const updates: any = {
         carrying: s.carryCount > 1 ? "pizza_ready" : "none",
         carryCount: s.carryCount - 1,
         tables: newTables,
@@ -331,13 +417,26 @@ export const useOfficeGame = create<PizzaGameState>()(
         totalPizzasServed: newServed,
         streak: s.streak + 1,
         bestStreak: Math.max(s.bestStreak, s.streak + 1),
-        lastServeTime: Date.now(),
+        lastServeTime: now,
         gameLevel: newLevel,
         levelProgress: progress,
         pizzasForNextLevel: newPizzasForNext,
         cashPerPizza: 25 + (newLevel - 1) * 5,
         customerSpawnInterval: Math.max(1.5, 3 - (newLevel - 1) * 0.15),
-      });
+        comboTimer: now,
+        comboCount: newCombo,
+      };
+
+      if (leveledUp) {
+        updates.showLevelUp = true;
+        updates.levelUpLevel = newLevel;
+      }
+
+      set(updates);
+
+      // Check achievements after delivery
+      setTimeout(() => get().checkAchievements(), 100);
+
       return true;
     },
 
@@ -404,14 +503,31 @@ export const useOfficeGame = create<PizzaGameState>()(
       const patience = Math.max(14, s.customerPatience - (s.gameLevel - 1) * 0.4);
       const custColor = CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)];
       const hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
+
+      // Determine customer type based on level and randomness
+      let custType: CustomerType = "normal";
+      const roll = Math.random();
+      if (s.gameLevel >= 2) {
+        if (roll < 0.08) custType = "vip";        // 8% VIP (pays 2.5x)
+        else if (roll < 0.18) custType = "tipper"; // 10% tipper (random bonus)
+        else if (roll < 0.28) custType = "patient";// 10% patient (1.5x patience)
+        else if (roll < 0.38) custType = "rush";   // 10% rush (0.6x patience, 1.5x pay)
+      }
+
+      // Rush hour event doubles spawn rate effect
+      let adjustedPatience = patience;
+      if (custType === "patient") adjustedPatience *= 1.5;
+      else if (custType === "rush") adjustedPatience *= 0.6;
+
       newTables[emptyTable.id] = {
         ...emptyTable,
         hasCustomer: true,
         customerTimer: 0,
-        customerMaxTime: patience,
+        customerMaxTime: adjustedPatience,
         served: false,
-        customerColor: custColor,
+        customerColor: custType === "vip" ? "#fbbf24" : custColor,
         customerHairColor: hairColor,
+        customerType: custType,
       };
       set({ tables: newTables });
     },
@@ -513,6 +629,58 @@ export const useOfficeGame = create<PizzaGameState>()(
       set(updates);
       return true;
     },
+
+    dismissLevelUp: () => set({ showLevelUp: false }),
+
+    addNotification: (text: string, icon: string, color: string) => {
+      const s = get();
+      const notif: Notification = { id: Date.now(), text, icon, color, time: Date.now() };
+      set({ notifications: [...s.notifications.slice(-4), notif] });
+      // Auto-remove after 3s
+      setTimeout(() => {
+        const curr = get();
+        set({ notifications: curr.notifications.filter((n) => n.id !== notif.id) });
+      }, 3000);
+    },
+
+    updateEvent: (delta: number) => {
+      const s = get();
+      if (!s.activeEvent) return;
+      const remaining = s.activeEvent.remaining - delta;
+      if (remaining <= 0) {
+        set({ activeEvent: null });
+      } else {
+        set({ activeEvent: { ...s.activeEvent, remaining } });
+      }
+    },
+
+    triggerRandomEvent: () => {
+      const s = get();
+      if (s.activeEvent || s.gameLevel < 3) return;
+      const events: GameEvent[] = [
+        { type: "rush_hour", name: "Rush Hour!", icon: "\u{23F0}", duration: 30, remaining: 30 },
+        { type: "double_pay", name: "Double Pay!", icon: "\u{1F4B0}", duration: 20, remaining: 20 },
+        { type: "tips_rain", name: "Tips Rain!", icon: "\u{1F4B5}", duration: 25, remaining: 25 },
+      ];
+      const event = events[Math.floor(Math.random() * events.length)];
+      set({ activeEvent: event });
+      get().addNotification(event.name, event.icon, event.type === "double_pay" ? "#22c55e" : event.type === "tips_rain" ? "#fbbf24" : "#ef4444");
+    },
+
+    checkAchievements: () => {
+      const s = get();
+      for (const def of ACHIEVEMENT_DEFS) {
+        if (!s.achievements[def.id] && def.check(s)) {
+          const newAchievements = { ...s.achievements, [def.id]: true };
+          set({
+            achievements: newAchievements,
+            money: s.money + def.reward,
+            totalMoneyEarned: s.totalMoneyEarned + def.reward,
+          });
+          get().addNotification(`${def.name} +$${def.reward}`, def.icon, "#a855f7");
+        }
+      }
+    },
   })),
   {
     name: "pizza-factory-save",
@@ -534,6 +702,7 @@ export const useOfficeGame = create<PizzaGameState>()(
       cashPerPizza: state.cashPerPizza,
       customerSpawnInterval: state.customerSpawnInterval,
       upgrades: state.upgrades,
+      achievements: state.achievements,
       // Save counts to reconstruct ovens/employees/tables on load
       _savedOvenCount: state.ovens.length,
       _savedPrepCount: state.prepEmployees.length,

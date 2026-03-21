@@ -85,6 +85,34 @@ function getMoodEmoji(patienceRatio: number): string {
   return "😠";
 }
 
+function CustomerTypeBadge({ type }: { type: string }) {
+  if (type === "normal") return null;
+
+  const badges: Record<string, { text: string; color: string }> = {
+    vip: { text: "\u2605 VIP", color: "#fbbf24" },
+    tipper: { text: "\u{1F4B5} TIP", color: "#22c55e" },
+    patient: { text: "\u{1F60A} CHILL", color: "#60a5fa" },
+    rush: { text: "\u26A1 RUSH", color: "#ef4444" },
+  };
+
+  const badge = badges[type];
+  if (!badge) return null;
+
+  return (
+    <Text
+      position={[0, 1.65, 0]}
+      fontSize={0.14}
+      color={badge.color}
+      anchorX="center"
+      outlineWidth={0.02}
+      outlineColor="#000000"
+      fontWeight="bold"
+    >
+      {badge.text}
+    </Text>
+  );
+}
+
 function CustomerModel({ table }: { table: CustomerTableType }) {
   if (!table.hasCustomer) return null;
 
@@ -93,9 +121,18 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
   const bodyColor = table.customerColor || "#6b7280";
   const hairColor = table.customerHairColor || "#4a3728";
   const mood = getMoodEmoji(patienceRatio);
+  const isVIP = table.customerType === "vip";
 
   return (
     <group position={[0, 0, 0.9]}>
+      {/* VIP glow ring */}
+      {isVIP && (
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.25, 0.32, 16]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.8} transparent opacity={0.6} />
+        </mesh>
+      )}
+
       <mesh position={[0, 0.15, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
         <meshStandardMaterial color="#1e293b" />
@@ -120,6 +157,14 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
         <sphereGeometry args={[0.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color={hairColor} />
       </mesh>
+
+      {/* VIP crown */}
+      {isVIP && (
+        <mesh position={[0, 1.0, 0]}>
+          <coneGeometry args={[0.08, 0.1, 5]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.5} />
+        </mesh>
+      )}
 
       <mesh position={[0.04, 0.84, 0.1]}>
         <sphereGeometry args={[0.02, 6, 6]} />
@@ -184,6 +229,13 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
       >
         {Math.ceil(table.customerMaxTime - table.customerTimer)}s
       </Text>
+
+      <CustomerTypeBadge type={table.customerType} />
+
+      {/* VIP light effect */}
+      {isVIP && (
+        <pointLight position={[0, 0.5, 0]} intensity={1.5} color="#fbbf24" distance={2} />
+      )}
     </group>
   );
 }
