@@ -41,6 +41,18 @@ class GameAudio {
       audio.play().catch(() => {});
     }
   }
+
+  setMusicSpeed(rate: number) {
+    if (this.bgMusic) {
+      this.bgMusic.playbackRate = Math.min(1.5, Math.max(0.8, rate));
+    }
+  }
+
+  setMusicVolume(vol: number) {
+    if (this.bgMusic) {
+      this.bgMusic.volume = Math.min(0.3, Math.max(0.1, vol));
+    }
+  }
 }
 
 export const gameAudio = new GameAudio();
@@ -50,10 +62,16 @@ export function SoundManager() {
   const money = useOfficeGame((s) => s.money);
   const totalPizzasServed = useOfficeGame((s) => s.totalPizzasServed);
   const missedCustomers = useOfficeGame((s) => s.missedCustomers);
+  const streak = useOfficeGame((s) => s.streak);
+  const activeEvent = useOfficeGame((s) => s.activeEvent);
+  const tables = useOfficeGame((s) => s.tables);
+  const showLevelUp = useOfficeGame((s) => s.showLevelUp);
+  const comboCount = useOfficeGame((s) => s.comboCount);
   const prevCarrying = useRef(carrying);
   const prevMoney = useRef(money);
   const prevServed = useRef(totalPizzasServed);
   const prevMissed = useRef(missedCustomers);
+  const prevStreak = useRef(streak);
   const hasInit = useRef(false);
 
   useEffect(() => {
@@ -62,6 +80,22 @@ export function SoundManager() {
       gameAudio.init();
     }
   }, []);
+
+  // Dynamic music speed based on streak and events
+  useEffect(() => {
+    let speed = 1.0;
+    if (streak >= 8) speed = 1.3;
+    else if (streak >= 5) speed = 1.15;
+    else if (streak >= 3) speed = 1.08;
+
+    if (activeEvent?.type === "rush_hour") speed += 0.15;
+    gameAudio.setMusicSpeed(speed);
+
+    let vol = 0.15;
+    if (activeEvent) vol = 0.2;
+    if (streak >= 5) vol = 0.22;
+    gameAudio.setMusicVolume(vol);
+  }, [streak, activeEvent]);
 
   useEffect(() => {
     if (prevCarrying.current === "none" && carrying !== "none") {
@@ -75,17 +109,52 @@ export function SoundManager() {
 
   useEffect(() => {
     if (money > prevMoney.current) {
-      gameAudio.play("cash", 0.35, 1.3);
+      const diff = money - prevMoney.current;
+      // Higher pitch for bigger earnings
+      const rate = diff >= 80 ? 1.6 : diff >= 50 ? 1.4 : 1.3;
+      gameAudio.play("cash", 0.35, rate);
     }
     prevMoney.current = money;
   }, [money]);
 
   useEffect(() => {
     if (missedCustomers > prevMissed.current) {
-      gameAudio.play("pickup", 0.2, 0.5);
+      gameAudio.play("pickup", 0.25, 0.5);
     }
     prevMissed.current = missedCustomers;
   }, [missedCustomers]);
+
+  // Streak milestone sounds
+  useEffect(() => {
+    if (streak > prevStreak.current && (streak === 5 || streak === 10)) {
+      gameAudio.play("cash", 0.4, 1.8);
+    }
+    prevStreak.current = streak;
+  }, [streak]);
+
+  // Level up fanfare
+  useEffect(() => {
+    if (showLevelUp) {
+      gameAudio.play("cash", 0.4, 0.8);
+      setTimeout(() => gameAudio.play("cash", 0.35, 1.2), 200);
+      setTimeout(() => gameAudio.play("cash", 0.3, 1.6), 400);
+    }
+  }, [showLevelUp]);
+
+  // Combo sound
+  useEffect(() => {
+    if (comboCount >= 3) {
+      gameAudio.play("deliver", 0.3, 1.5 + comboCount * 0.1);
+    }
+  }, [comboCount]);
+
+  // Low patience warning
+  useEffect(() => {
+    const critical = tables.find(t => t.hasCustomer && t.customerTimer / t.customerMaxTime > 0.8);
+    if (critical) {
+      gameAudio.play("pickup", 0.1, 2.0);
+    }
+  }, [tables]);
 
   return null;
 }

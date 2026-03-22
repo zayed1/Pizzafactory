@@ -24,6 +24,9 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const ovens = useOfficeGame((s) => s.ovens);
   const phase = useOfficeGame((s) => s.phase);
   const dropItem = useOfficeGame((s) => s.dropItem);
+  const playerColor = useOfficeGame((s) => s.playerColor);
+  const playerHat = useOfficeGame((s) => s.playerHat);
+  const prestigeLevel = useOfficeGame((s) => s.prestigeLevel);
   const bobTimer = useRef(0);
   const targetRotation = useRef(0);
 
@@ -104,12 +107,12 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
 
       <mesh position={[0, 0.38, 0]} castShadow>
         <cylinderGeometry args={[0.22, 0.15, 0.25, 8]} />
-        <meshStandardMaterial color="#ffffff" />
+        <meshStandardMaterial color={playerColor} />
       </mesh>
 
       <mesh position={[0, 0.58, 0]} castShadow>
         <cylinderGeometry args={[0.18, 0.22, 0.2, 8]} />
-        <meshStandardMaterial color="#ffffff" />
+        <meshStandardMaterial color={playerColor} />
       </mesh>
 
       <mesh position={[0, 0.42, 0.18]}>
@@ -135,18 +138,76 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
         <meshStandardMaterial color="#deb887" />
       </mesh>
 
-      <mesh position={[0, 0.95, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0, 1.0, 0]} castShadow>
-        <cylinderGeometry args={[0.2, 0.18, 0.06, 8]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0, 1.05, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.2, 0.06, 8]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
+      {/* Hat based on playerHat */}
+      {playerHat === "chef" && (
+        <>
+          <mesh position={[0, 0.95, 0]} castShadow>
+            <cylinderGeometry args={[0.18, 0.18, 0.06, 8]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0, 1.0, 0]} castShadow>
+            <cylinderGeometry args={[0.2, 0.18, 0.06, 8]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0, 1.05, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.2, 0.06, 8]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+        </>
+      )}
+      {playerHat === "tall_chef" && (
+        <>
+          <mesh position={[0, 0.95, 0]} castShadow>
+            <cylinderGeometry args={[0.17, 0.17, 0.04, 8]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0, 1.1, 0]} castShadow>
+            <cylinderGeometry args={[0.15, 0.17, 0.28, 8]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0, 1.26, 0]} castShadow>
+            <sphereGeometry args={[0.15, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+        </>
+      )}
+      {playerHat === "beret" && (
+        <>
+          <mesh position={[0, 0.93, 0]} castShadow>
+            <cylinderGeometry args={[0.19, 0.17, 0.04, 8]} />
+            <meshStandardMaterial color="#dc2626" />
+          </mesh>
+          <mesh position={[0, 0.97, 0]} castShadow>
+            <sphereGeometry args={[0.17, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#dc2626" />
+          </mesh>
+          <mesh position={[0, 1.04, 0]} castShadow>
+            <sphereGeometry args={[0.03, 6, 6]} />
+            <meshStandardMaterial color="#dc2626" />
+          </mesh>
+        </>
+      )}
+      {playerHat === "crown" && (
+        <>
+          <mesh position={[0, 0.95, 0]} castShadow>
+            <cylinderGeometry args={[0.17, 0.19, 0.06, 8]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.3} />
+          </mesh>
+          <mesh position={[0, 1.02, 0]} castShadow>
+            <cylinderGeometry args={[0.15, 0.17, 0.1, 5]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.3} />
+          </mesh>
+          <mesh position={[0, 1.08, 0]}>
+            <sphereGeometry args={[0.03, 6, 6]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.5} />
+          </mesh>
+        </>
+      )}
+
+      {/* Prestige glow aura */}
+      {prestigeLevel > 0 && (
+        <pointLight position={[0, 0.5, 0]} intensity={prestigeLevel * 0.3} color="#fbbf24" distance={2} />
+      )}
 
       <mesh position={[0.06, 0.82, 0.13]}>
         <sphereGeometry args={[0.025, 6, 6]} />

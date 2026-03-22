@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { useIAPStore } from "./IAPStore";
+import { TutorialOverlay } from "./Tutorial";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -400,6 +401,9 @@ export function GameHUD() {
 
       {/* Daily Challenges */}
       <DailyChallengePanel isMobile={isMobile} />
+
+      {/* Tutorial */}
+      <TutorialOverlay />
 
       {/* === TOP BAR === */}
       <div

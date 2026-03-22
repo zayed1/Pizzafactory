@@ -5,6 +5,8 @@ export type GamePhase = "menu" | "playing" | "paused";
 export type CustomerMood = "happy" | "neutral" | "worried" | "angry";
 export type ItemType = "none" | "dough" | "pizza_raw" | "pizza_ready";
 export type CustomerType = "normal" | "vip" | "patient" | "rush" | "tipper";
+export type SpecialOrder = "none" | "double" | "express" | "group";
+export type HatType = "chef" | "tall_chef" | "beret" | "crown" | "none";
 
 export interface Achievement {
   id: string;
@@ -62,6 +64,9 @@ export interface CustomerTable {
   customerColor: string;
   customerHairColor: string;
   customerType: CustomerType;
+  specialOrder: SpecialOrder;
+  servingsNeeded: number;
+  servingsReceived: number;
 }
 
 export interface OvenState {
@@ -132,6 +137,25 @@ interface PizzaGameState {
   dailyStreak: number;
   speedServes: number;
 
+  // Tutorial
+  tutorialStep: number;
+  tutorialDone: boolean;
+
+  // Prestige
+  prestigeLevel: number;
+  prestigeMultiplier: number;
+
+  // Session stats
+  sessionStartMoney: number;
+  fastestDelivery: number;
+  sessionPizzas: number;
+
+  // Player customization
+  playerColor: string;
+  playerHat: HatType;
+  unlockedHats: HatType[];
+  unlockedColors: string[];
+
   upgrades: {
     speed: UpgradeInfo;
     capacity: UpgradeInfo;
@@ -171,6 +195,12 @@ interface PizzaGameState {
   checkAchievements: () => void;
   initDailyChallenges: () => void;
   updateDailyProgress: (type: DailyChallenge["type"], amount: number) => void;
+  advanceTutorial: () => void;
+  skipTutorial: () => void;
+  doPrestige: () => void;
+  setPlayerColor: (color: string) => void;
+  setPlayerHat: (hat: HatType) => void;
+  unlockCosmetic: (type: "hat" | "color", item: string) => boolean;
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
@@ -203,6 +233,9 @@ function createTables(): CustomerTable[] {
     customerColor: CUSTOMER_COLORS[0],
     customerHairColor: HAIR_COLORS[0],
     customerType: "normal" as CustomerType,
+    specialOrder: "none" as SpecialOrder,
+    servingsNeeded: 1,
+    servingsReceived: 0,
   }));
 }
 
@@ -218,7 +251,17 @@ const ACHIEVEMENT_DEFS: { id: string; name: string; description: string; icon: s
   { id: "level_5", name: "Rising Star", description: "Reach Level 5", icon: "\u{2B50}", reward: 100, check: (s) => s.gameLevel >= 5 },
   { id: "level_10", name: "Pizza Empire", description: "Reach Level 10", icon: "\u{1F3F0}", reward: 300, check: (s) => s.gameLevel >= 10 },
   { id: "no_miss_10", name: "Perfect Service", description: "Serve 10 in a row without missing", icon: "\u{2705}", reward: 75, check: (s) => s.streak >= 10 && s.missedCustomers === 0 },
+  { id: "prestige_1", name: "Reborn", description: "Prestige for the first time", icon: "\u{1F31F}", reward: 0, check: (s) => s.prestigeLevel >= 1 },
 ];
+
+const PLAYER_COLORS = ["#ffffff", "#dc2626", "#2563eb", "#16a34a", "#f97316", "#a855f7", "#ec4899", "#fbbf24", "#06b6d4", "#1e293b"];
+const HAT_DEFS: { hat: HatType; name: string; cost: number }[] = [
+  { hat: "chef", name: "Chef Hat", cost: 0 },
+  { hat: "tall_chef", name: "Tall Chef", cost: 200 },
+  { hat: "beret", name: "Beret", cost: 300 },
+  { hat: "crown", name: "Crown", cost: 1000 },
+];
+export { PLAYER_COLORS, HAT_DEFS };
 
 function getTodayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -312,6 +355,21 @@ export const useOfficeGame = create<PizzaGameState>()(
     dailyStreak: 0,
     speedServes: 0,
 
+    tutorialStep: 0,
+    tutorialDone: false,
+
+    prestigeLevel: 0,
+    prestigeMultiplier: 1,
+
+    sessionStartMoney: 0,
+    fastestDelivery: 999,
+    sessionPizzas: 0,
+
+    playerColor: "#ffffff",
+    playerHat: "chef" as HatType,
+    unlockedHats: ["chef" as HatType, "none" as HatType],
+    unlockedColors: ["#ffffff", "#dc2626", "#2563eb"],
+
     upgrades: {
       speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
       capacity: { level: 0, cost: 150, baseCost: 150, maxLevel: 3 },
@@ -324,7 +382,17 @@ export const useOfficeGame = create<PizzaGameState>()(
       prepSpeed: { level: 0, cost: 60, baseCost: 60, maxLevel: 8 },
     },
 
-    startGame: () => set({ phase: "playing", gameStartTime: Date.now() }),
+    startGame: () => {
+      const s = get();
+      set({
+        phase: "playing",
+        gameStartTime: Date.now(),
+        sessionStartMoney: s.money,
+        sessionPizzas: 0,
+        fastestDelivery: 999,
+        tutorialStep: s.tutorialDone ? -1 : 0,
+      });
+    },
 
     togglePause: () => {
       const s = get();
@@ -418,7 +486,18 @@ export const useOfficeGame = create<PizzaGameState>()(
       const table = s.tables[tableId];
       if (!table || !table.unlocked || !table.hasCustomer || table.served) return false;
       const newTables = [...s.tables];
-      newTables[tableId] = { ...table, served: true, hasCustomer: false, customerTimer: 0 };
+
+      // Special orders: some need multiple servings
+      const newReceived = table.servingsReceived + 1;
+      const orderComplete = newReceived >= table.servingsNeeded;
+
+      if (orderComplete) {
+        newTables[tableId] = { ...table, served: true, hasCustomer: false, customerTimer: 0, servingsReceived: newReceived };
+      } else {
+        newTables[tableId] = { ...table, servingsReceived: newReceived };
+        set({ carrying: s.carryCount > 1 ? "pizza_ready" : "none", carryCount: s.carryCount - 1, tables: newTables });
+        return true;
+      }
 
       const streakBonus = Math.min(s.streak, 10);
       let cash = s.cashPerPizza + streakBonus * 5;
@@ -441,6 +520,18 @@ export const useOfficeGame = create<PizzaGameState>()(
       // Speed bonus - deliver before half patience
       const patienceRatio = 1 - table.customerTimer / table.customerMaxTime;
       if (patienceRatio > 0.75) cash += 10;
+
+      // Special order bonus
+      if (table.specialOrder === "double") cash = Math.floor(cash * 1.8);
+      else if (table.specialOrder === "express") cash = Math.floor(cash * 2.5);
+      else if (table.specialOrder === "group") cash = Math.floor(cash * 2.0);
+
+      // Prestige multiplier
+      cash = Math.floor(cash * s.prestigeMultiplier);
+
+      // Track fastest delivery
+      const deliveryTime = table.customerTimer;
+      const newFastest = Math.min(s.fastestDelivery, deliveryTime);
 
       const newServed = s.totalPizzasServed + 1;
       const newProgress = s.levelProgress + 1;
@@ -473,6 +564,8 @@ export const useOfficeGame = create<PizzaGameState>()(
         customerSpawnInterval: Math.max(1.5, 3 - (newLevel - 1) * 0.15),
         comboTimer: now,
         comboCount: newCombo,
+        fastestDelivery: newFastest,
+        sessionPizzas: s.sessionPizzas + 1,
       };
 
       if (leveledUp) {
@@ -492,6 +585,11 @@ export const useOfficeGame = create<PizzaGameState>()(
         // no_miss is tracked by consecutive serves without miss
         if (st.missedCustomers === 0) st.updateDailyProgress("no_miss", newServed);
         st.checkAchievements();
+        // Complete tutorial on first delivery
+        if (st.tutorialStep >= 0 && !st.tutorialDone) {
+          set({ tutorialStep: -1, tutorialDone: true });
+          get().addNotification("Tutorial Complete!", "\u{1F389}", "#22c55e");
+        }
       }, 100);
 
       return true;
@@ -576,6 +674,16 @@ export const useOfficeGame = create<PizzaGameState>()(
       if (custType === "patient") adjustedPatience *= 1.5;
       else if (custType === "rush") adjustedPatience *= 0.6;
 
+      // Special orders from level 4
+      let specOrder: SpecialOrder = "none";
+      let servings = 1;
+      if (s.gameLevel >= 4) {
+        const specRoll = Math.random();
+        if (specRoll < 0.06) { specOrder = "express"; adjustedPatience *= 0.4; servings = 1; }
+        else if (specRoll < 0.14) { specOrder = "double"; servings = 2; }
+        else if (specRoll < 0.20) { specOrder = "group"; servings = 3; adjustedPatience *= 1.5; }
+      }
+
       newTables[emptyTable.id] = {
         ...emptyTable,
         hasCustomer: true,
@@ -585,6 +693,9 @@ export const useOfficeGame = create<PizzaGameState>()(
         customerColor: custType === "vip" ? "#fbbf24" : custColor,
         customerHairColor: hairColor,
         customerType: custType,
+        specialOrder: specOrder,
+        servingsNeeded: servings,
+        servingsReceived: 0,
       };
       set({ tables: newTables });
     },
@@ -787,6 +898,88 @@ export const useOfficeGame = create<PizzaGameState>()(
         set({ dailyChallenges: newChallenges });
       }
     },
+
+    advanceTutorial: () => {
+      const s = get();
+      if (s.tutorialStep < 0) return;
+      set({ tutorialStep: s.tutorialStep + 1 });
+    },
+
+    skipTutorial: () => {
+      set({ tutorialStep: -1, tutorialDone: true });
+    },
+
+    doPrestige: () => {
+      const s = get();
+      if (s.gameLevel < 10) return;
+      const newPrestige = s.prestigeLevel + 1;
+      const newMultiplier = 1 + newPrestige * 0.2;
+      // Reset progress but keep cosmetics and prestige
+      set({
+        money: 0,
+        totalMoneyEarned: 0,
+        totalPizzasServed: 0,
+        missedCustomers: 0,
+        gameLevel: 1,
+        levelProgress: 0,
+        pizzasForNextLevel: 5,
+        playerSpeed: 4.5,
+        maxCarry: 1,
+        ovenCookTime: 2,
+        ovenCoolTime: 8,
+        doughSpawnInterval: 2,
+        prepWorkTime: 2.5,
+        cashPerPizza: 25,
+        customerSpawnInterval: 3,
+        streak: 0,
+        bestStreak: 0,
+        ovens: createOvens(),
+        prepEmployees: createPrepEmployees(),
+        tables: createTables(),
+        upgrades: {
+          speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
+          capacity: { level: 0, cost: 150, baseCost: 150, maxLevel: 3 },
+          ovenSpeed: { level: 0, cost: 50, baseCost: 50, maxLevel: 8 },
+          ovenCool: { level: 0, cost: 60, baseCost: 60, maxLevel: 6 },
+          prepEmployee: { level: 0, cost: 120, baseCost: 120, maxLevel: 2 },
+          newTable: { level: 0, cost: 75, baseCost: 75, maxLevel: 4 },
+          doughSpeed: { level: 0, cost: 40, baseCost: 40, maxLevel: 8 },
+          newOven: { level: 0, cost: 120, baseCost: 120, maxLevel: 2 },
+          prepSpeed: { level: 0, cost: 60, baseCost: 60, maxLevel: 8 },
+        },
+        prestigeLevel: newPrestige,
+        prestigeMultiplier: newMultiplier,
+        phase: "menu",
+      });
+      // Unlock cosmetics on prestige
+      const st = get();
+      if (newPrestige >= 1 && !st.unlockedColors.includes("#fbbf24")) {
+        set({ unlockedColors: [...st.unlockedColors, "#fbbf24", "#16a34a"] });
+      }
+      if (newPrestige >= 2 && !st.unlockedHats.includes("beret")) {
+        set({ unlockedHats: [...st.unlockedHats, "beret"] });
+      }
+      if (newPrestige >= 3 && !st.unlockedHats.includes("crown")) {
+        set({ unlockedHats: [...st.unlockedHats, "crown"] });
+      }
+    },
+
+    setPlayerColor: (color: string) => set({ playerColor: color }),
+    setPlayerHat: (hat: HatType) => set({ playerHat: hat }),
+
+    unlockCosmetic: (type, item) => {
+      const s = get();
+      if (type === "hat") {
+        const def = HAT_DEFS.find(h => h.hat === item);
+        if (!def || s.money < def.cost || s.unlockedHats.includes(item as HatType)) return false;
+        set({ money: s.money - def.cost, unlockedHats: [...s.unlockedHats, item as HatType] });
+        return true;
+      } else {
+        if (s.money < 50 || s.unlockedColors.includes(item)) return false;
+        set({ money: s.money - 50, unlockedColors: [...s.unlockedColors, item] });
+        return true;
+      }
+    },
   })),
   {
     name: "pizza-factory-save",
@@ -812,6 +1005,13 @@ export const useOfficeGame = create<PizzaGameState>()(
       dailyChallenges: state.dailyChallenges,
       dailyDate: state.dailyDate,
       dailyStreak: state.dailyStreak,
+      tutorialDone: state.tutorialDone,
+      prestigeLevel: state.prestigeLevel,
+      prestigeMultiplier: state.prestigeMultiplier,
+      playerColor: state.playerColor,
+      playerHat: state.playerHat,
+      unlockedHats: state.unlockedHats,
+      unlockedColors: state.unlockedColors,
       // Save counts to reconstruct ovens/employees/tables on load
       _savedOvenCount: state.ovens.length,
       _savedPrepCount: state.prepEmployees.length,

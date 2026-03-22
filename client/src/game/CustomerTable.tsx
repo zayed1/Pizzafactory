@@ -85,9 +85,7 @@ function getMoodEmoji(patienceRatio: number): string {
   return "😠";
 }
 
-function CustomerTypeBadge({ type }: { type: string }) {
-  if (type === "normal") return null;
-
+function CustomerTypeBadge({ type, specialOrder, servingsNeeded, servingsReceived }: { type: string; specialOrder: string; servingsNeeded: number; servingsReceived: number }) {
   const badges: Record<string, { text: string; color: string }> = {
     vip: { text: "\u2605 VIP", color: "#fbbf24" },
     tipper: { text: "\u{1F4B5} TIP", color: "#22c55e" },
@@ -95,21 +93,44 @@ function CustomerTypeBadge({ type }: { type: string }) {
     rush: { text: "\u26A1 RUSH", color: "#ef4444" },
   };
 
-  const badge = badges[type];
-  if (!badge) return null;
+  const specBadges: Record<string, { text: string; color: string }> = {
+    double: { text: `\u{1F355}x2 ${servingsReceived}/${servingsNeeded}`, color: "#f97316" },
+    express: { text: "\u26A1 EXPRESS", color: "#ef4444" },
+    group: { text: `\u{1F37D}\uFE0F x3 ${servingsReceived}/${servingsNeeded}`, color: "#a855f7" },
+  };
+
+  const badge = type !== "normal" ? badges[type] : null;
+  const specBadge = specialOrder !== "none" ? specBadges[specialOrder] : null;
 
   return (
-    <Text
-      position={[0, 1.65, 0]}
-      fontSize={0.14}
-      color={badge.color}
-      anchorX="center"
-      outlineWidth={0.02}
-      outlineColor="#000000"
-      fontWeight="bold"
-    >
-      {badge.text}
-    </Text>
+    <>
+      {badge && (
+        <Text
+          position={[0, 1.65, 0]}
+          fontSize={0.14}
+          color={badge.color}
+          anchorX="center"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          fontWeight="bold"
+        >
+          {badge.text}
+        </Text>
+      )}
+      {specBadge && (
+        <Text
+          position={[0, badge ? 1.85 : 1.65, 0]}
+          fontSize={0.13}
+          color={specBadge.color}
+          anchorX="center"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          fontWeight="bold"
+        >
+          {specBadge.text}
+        </Text>
+      )}
+    </>
   );
 }
 
@@ -265,7 +286,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
         {Math.ceil(table.customerMaxTime - table.customerTimer)}s
       </Text>
 
-      <CustomerTypeBadge type={table.customerType} />
+      <CustomerTypeBadge type={table.customerType} specialOrder={table.specialOrder} servingsNeeded={table.servingsNeeded} servingsReceived={table.servingsReceived} />
 
       {/* VIP light effect */}
       {isVIP && (
