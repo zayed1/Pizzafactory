@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useOfficeGame, CustomerTable as CustomerTableType } from "../lib/stores/useOfficeGame";
@@ -114,9 +114,44 @@ function CustomerTypeBadge({ type }: { type: string }) {
 }
 
 function CustomerModel({ table }: { table: CustomerTableType }) {
-  if (!table.hasCustomer) return null;
+  const animProgress = useRef(0);
+  const groupRef = useRef<THREE.Group>(null);
+  const prevHasCustomer = useRef(false);
+  const exitAnim = useRef(0);
+  const [showExit, setShowExit] = useState(false);
 
-  const patienceRatio = 1 - table.customerTimer / table.customerMaxTime;
+  useFrame((_, delta) => {
+    if (table.hasCustomer && animProgress.current < 1) {
+      animProgress.current = Math.min(1, animProgress.current + delta * 4);
+    }
+    if (!table.hasCustomer && prevHasCustomer.current) {
+      setShowExit(true);
+      exitAnim.current = 1;
+    }
+    if (showExit) {
+      exitAnim.current = Math.max(0, exitAnim.current - delta * 3);
+      if (exitAnim.current <= 0) setShowExit(false);
+    }
+    if (table.hasCustomer && !prevHasCustomer.current) {
+      animProgress.current = 0;
+    }
+    prevHasCustomer.current = table.hasCustomer;
+
+    if (groupRef.current) {
+      const scale = table.hasCustomer ? animProgress.current : exitAnim.current;
+      const bounce = table.hasCustomer && animProgress.current < 1
+        ? 1 + Math.sin(animProgress.current * Math.PI) * 0.2
+        : 1;
+      groupRef.current.scale.setScalar(scale * bounce);
+      groupRef.current.position.y = table.hasCustomer
+        ? (1 - animProgress.current) * -0.5
+        : 0;
+    }
+  });
+
+  if (!table.hasCustomer && !showExit) return null;
+
+  const patienceRatio = table.hasCustomer ? 1 - table.customerTimer / table.customerMaxTime : 1;
   const color = patienceRatio > 0.5 ? "#22c55e" : patienceRatio > 0.25 ? "#f59e0b" : "#ef4444";
   const bodyColor = table.customerColor || "#6b7280";
   const hairColor = table.customerHairColor || "#4a3728";
@@ -124,7 +159,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
   const isVIP = table.customerType === "vip";
 
   return (
-    <group position={[0, 0, 0.9]}>
+    <group ref={groupRef} position={[0, 0, 0.9]}>
       {/* VIP glow ring */}
       {isVIP && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>

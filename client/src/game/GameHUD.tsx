@@ -221,6 +221,108 @@ function EventBanner() {
   );
 }
 
+function DailyChallengePanel({ isMobile }: { isMobile: boolean }) {
+  const dailyChallenges = useOfficeGame((s) => s.dailyChallenges);
+  const dailyStreak = useOfficeGame((s) => s.dailyStreak);
+  const initDailyChallenges = useOfficeGame((s) => s.initDailyChallenges);
+  const [collapsed, setCollapsed] = useState(isMobile);
+
+  useEffect(() => {
+    initDailyChallenges();
+  }, []);
+
+  const allDone = dailyChallenges.every((c) => c.completed);
+
+  return (
+    <div style={{
+      position: "absolute",
+      top: isMobile ? 42 : 110,
+      left: isMobile ? 4 : 12,
+      pointerEvents: "auto",
+      zIndex: 30,
+    }}>
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        style={{
+          background: allDone
+            ? "linear-gradient(135deg, rgba(34,197,94,0.9), rgba(22,163,74,0.9))"
+            : "rgba(0,0,0,0.85)",
+          border: allDone ? "1px solid #22c55e" : "1px solid rgba(249,115,22,0.3)",
+          borderRadius: collapsed ? 10 : "10px 10px 0 0",
+          padding: "5px 12px",
+          color: allDone ? "#fff" : "#f97316",
+          fontSize: isMobile ? 10 : 12,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Inter', sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        {"\u{1F3AF}"} Daily {dailyStreak > 0 && <span style={{ fontSize: 9, color: "#fbbf24" }}>{"\u{1F525}"}{dailyStreak}d</span>}
+        <span style={{ fontSize: 9, opacity: 0.7 }}>
+          {dailyChallenges.filter(c => c.completed).length}/{dailyChallenges.length}
+        </span>
+      </button>
+
+      {!collapsed && (
+        <div style={{
+          background: "rgba(0,0,0,0.9)",
+          borderRadius: "0 10px 10px 10px",
+          padding: "8px 10px",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(249,115,22,0.2)",
+          borderTop: "none",
+          minWidth: isMobile ? 180 : 220,
+        }}>
+          {dailyChallenges.map((c) => {
+            const pct = Math.min(100, (c.progress / c.target) * 100);
+            return (
+              <div key={c.id} style={{
+                marginBottom: 6,
+                opacity: c.completed ? 0.6 : 1,
+              }}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: isMobile ? 10 : 11,
+                  color: c.completed ? "#22c55e" : "#e2e8f0",
+                  fontFamily: "'Inter', sans-serif",
+                }}>
+                  <span>{c.icon} {c.description}</span>
+                  <span style={{ color: c.completed ? "#22c55e" : "#fbbf24", fontSize: 9, fontWeight: 700 }}>
+                    {c.completed ? "\u2713" : `$${c.reward}`}
+                  </span>
+                </div>
+                <div style={{
+                  height: 3,
+                  background: "rgba(255,255,255,0.1)",
+                  borderRadius: 2,
+                  marginTop: 3,
+                  overflow: "hidden",
+                }}>
+                  <div style={{
+                    width: `${pct}%`,
+                    height: "100%",
+                    background: c.completed
+                      ? "#22c55e"
+                      : "linear-gradient(90deg, #f97316, #fbbf24)",
+                    borderRadius: 2,
+                    transition: "width 0.3s ease",
+                  }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function GameHUD() {
   const money = useOfficeGame((s) => s.money);
   const carrying = useOfficeGame((s) => s.carrying);
@@ -295,6 +397,9 @@ export function GameHUD() {
 
       {/* Event Banner */}
       <EventBanner />
+
+      {/* Daily Challenges */}
+      <DailyChallengePanel isMobile={isMobile} />
 
       {/* === TOP BAR === */}
       <div

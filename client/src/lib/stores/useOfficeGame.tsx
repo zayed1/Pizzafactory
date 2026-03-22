@@ -32,6 +32,17 @@ export interface Notification {
   time: number;
 }
 
+export interface DailyChallenge {
+  id: string;
+  description: string;
+  icon: string;
+  target: number;
+  progress: number;
+  reward: number;
+  completed: boolean;
+  type: "serve" | "earn" | "streak" | "no_miss" | "speed_serve";
+}
+
 export interface PrepEmployee {
   id: number;
   hasPizza: boolean;
@@ -116,6 +127,10 @@ interface PizzaGameState {
   achievements: Record<string, boolean>;
   comboTimer: number;
   comboCount: number;
+  dailyChallenges: DailyChallenge[];
+  dailyDate: string;
+  dailyStreak: number;
+  speedServes: number;
 
   upgrades: {
     speed: UpgradeInfo;
@@ -154,6 +169,8 @@ interface PizzaGameState {
   updateEvent: (delta: number) => void;
   triggerRandomEvent: () => void;
   checkAchievements: () => void;
+  initDailyChallenges: () => void;
+  updateDailyProgress: (type: DailyChallenge["type"], amount: number) => void;
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
@@ -202,6 +219,33 @@ const ACHIEVEMENT_DEFS: { id: string; name: string; description: string; icon: s
   { id: "level_10", name: "Pizza Empire", description: "Reach Level 10", icon: "\u{1F3F0}", reward: 300, check: (s) => s.gameLevel >= 10 },
   { id: "no_miss_10", name: "Perfect Service", description: "Serve 10 in a row without missing", icon: "\u{2705}", reward: 75, check: (s) => s.streak >= 10 && s.missedCustomers === 0 },
 ];
+
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function generateDailyChallenges(): DailyChallenge[] {
+  const today = getTodayStr();
+  // Use date as seed for deterministic daily challenges
+  const seed = today.split("-").reduce((a, b) => a + parseInt(b), 0);
+  const allChallenges: Omit<DailyChallenge, "id" | "progress" | "completed">[] = [
+    { description: "Serve 15 pizzas", icon: "\u{1F355}", target: 15, reward: 100, type: "serve" },
+    { description: "Serve 30 pizzas", icon: "\u{1F355}", target: 30, reward: 250, type: "serve" },
+    { description: "Earn $300", icon: "\u{1F4B0}", target: 300, reward: 80, type: "earn" },
+    { description: "Earn $800", icon: "\u{1F4B0}", target: 800, reward: 200, type: "earn" },
+    { description: "Get a 5x streak", icon: "\u{1F525}", target: 5, reward: 60, type: "streak" },
+    { description: "Get a 8x streak", icon: "\u{1F525}", target: 8, reward: 150, type: "streak" },
+    { description: "Serve 10 without missing", icon: "\u{2705}", target: 10, reward: 120, type: "no_miss" },
+    { description: "Speed serve 5 customers", icon: "\u26A1", target: 5, reward: 90, type: "speed_serve" },
+  ];
+
+  const picked: DailyChallenge[] = [];
+  const shuffled = [...allChallenges].sort((_, __) => ((seed + picked.length * 7) % 3) - 1);
+  for (let i = 0; i < 3 && i < shuffled.length; i++) {
+    picked.push({ ...shuffled[i], id: `daily_${i}`, progress: 0, completed: false });
+  }
+  return picked;
+}
 
 function createPrepEmployees(): PrepEmployee[] {
   return [
@@ -263,6 +307,10 @@ export const useOfficeGame = create<PizzaGameState>()(
     achievements: {},
     comboTimer: 0,
     comboCount: 0,
+    dailyChallenges: generateDailyChallenges(),
+    dailyDate: getTodayStr(),
+    dailyStreak: 0,
+    speedServes: 0,
 
     upgrades: {
       speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
@@ -434,8 +482,17 @@ export const useOfficeGame = create<PizzaGameState>()(
 
       set(updates);
 
-      // Check achievements after delivery
-      setTimeout(() => get().checkAchievements(), 100);
+      // Update daily challenges & achievements
+      setTimeout(() => {
+        const st = get();
+        st.updateDailyProgress("serve", 1);
+        st.updateDailyProgress("earn", cash);
+        if (st.streak + 1 >= 1) st.updateDailyProgress("streak", st.streak + 1);
+        if (patienceRatio > 0.75) st.updateDailyProgress("speed_serve", 1);
+        // no_miss is tracked by consecutive serves without miss
+        if (st.missedCustomers === 0) st.updateDailyProgress("no_miss", newServed);
+        st.checkAchievements();
+      }, 100);
 
       return true;
     },
@@ -681,6 +738,55 @@ export const useOfficeGame = create<PizzaGameState>()(
         }
       }
     },
+
+    initDailyChallenges: () => {
+      const s = get();
+      const today = getTodayStr();
+      if (s.dailyDate !== today) {
+        const wasYesterday = (() => {
+          const d = new Date(s.dailyDate);
+          d.setDate(d.getDate() + 1);
+          return d.toISOString().slice(0, 10) === today;
+        })();
+        const allCompleted = s.dailyChallenges.every((c) => c.completed);
+        set({
+          dailyChallenges: generateDailyChallenges(),
+          dailyDate: today,
+          dailyStreak: wasYesterday && allCompleted ? s.dailyStreak + 1 : allCompleted ? s.dailyStreak + 1 : 0,
+          speedServes: 0,
+        });
+        if (wasYesterday && allCompleted) {
+          get().addNotification(`Daily Streak ${s.dailyStreak + 1}!`, "\u{1F4AA}", "#f97316");
+        }
+      }
+    },
+
+    updateDailyProgress: (type, amount) => {
+      const s = get();
+      let updated = false;
+      const newChallenges = s.dailyChallenges.map((c) => {
+        if (c.completed || c.type !== type) return c;
+        const newProgress = type === "streak" || type === "no_miss"
+          ? Math.max(c.progress, amount)
+          : c.progress + amount;
+        if (newProgress >= c.target && !c.completed) {
+          updated = true;
+          setTimeout(() => {
+            const st = get();
+            set({
+              money: st.money + c.reward,
+              totalMoneyEarned: st.totalMoneyEarned + c.reward,
+            });
+            get().addNotification(`Challenge Done! +$${c.reward}`, "\u{1F3AF}", "#f97316");
+          }, 200);
+          return { ...c, progress: newProgress, completed: true };
+        }
+        return { ...c, progress: newProgress };
+      });
+      if (updated || newChallenges.some((c, i) => c.progress !== s.dailyChallenges[i].progress)) {
+        set({ dailyChallenges: newChallenges });
+      }
+    },
   })),
   {
     name: "pizza-factory-save",
@@ -703,6 +809,9 @@ export const useOfficeGame = create<PizzaGameState>()(
       customerSpawnInterval: state.customerSpawnInterval,
       upgrades: state.upgrades,
       achievements: state.achievements,
+      dailyChallenges: state.dailyChallenges,
+      dailyDate: state.dailyDate,
+      dailyStreak: state.dailyStreak,
       // Save counts to reconstruct ovens/employees/tables on load
       _savedOvenCount: state.ovens.length,
       _savedPrepCount: state.prepEmployees.length,

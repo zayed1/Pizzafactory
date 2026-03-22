@@ -13,6 +13,8 @@ import { FloatingTextManager } from "./FloatingText";
 import { GuideArrows } from "./GuideArrows";
 import { SoundManager } from "./SoundManager";
 import { ParticleSystem } from "./Particles";
+import { CameraEffects } from "./CameraEffects";
+import { EventLighting } from "./EventLighting";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -63,6 +65,8 @@ export function OfficeScene() {
       <SoundManager />
       <ParticleSystem />
       <GameLoop />
+      <CameraEffects />
+      <EventLighting />
     </>
   );
 }
