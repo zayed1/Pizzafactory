@@ -15,15 +15,17 @@ import { SoundManager } from "./SoundManager";
 import { ParticleSystem } from "./Particles";
 import { CameraEffects } from "./CameraEffects";
 import { EventLighting } from "./EventLighting";
+import { useRestaurantTheme } from "./RestaurantTheme";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
   const prepEmployees = useOfficeGame((s) => s.prepEmployees);
   const tables = useOfficeGame((s) => s.tables);
+  const theme = useRestaurantTheme();
 
   return (
     <>
-      <ambientLight intensity={0.4} color="#fff5e6" />
+      <ambientLight intensity={theme.ambientIntensity} color="#fff5e6" />
       <directionalLight
         position={[8, 15, 8]}
         intensity={0.8}
@@ -37,10 +39,10 @@ export function OfficeScene() {
         shadow-camera-bottom={-10}
         color="#fff8f0"
       />
-      <pointLight position={[1.5, 2.5, 0]} intensity={0.5} color="#fbbf24" distance={6} />
+      <pointLight position={[1.5, 2.5, 0]} intensity={0.5} color={theme.lightEmissive} distance={6} />
       <pointLight position={[4, 2.5, 0]} intensity={0.6} color="#f97316" distance={6} />
       <pointLight position={[7, 2.5, 0]} intensity={0.3} color="#a855f7" distance={6} />
-      <pointLight position={[11, 2.5, 0]} intensity={0.4} color="#fef3c7" distance={8} />
+      <pointLight position={[11, 2.5, 0]} intensity={theme.lightIntensity * 0.7} color={theme.lightEmissive} distance={8} />
 
       <hemisphereLight intensity={0.3} color="#fef3c7" groundColor="#5c3a1e" />
 

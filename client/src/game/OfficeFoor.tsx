@@ -1,19 +1,22 @@
 import { useMemo } from "react";
+import { useRestaurantTheme } from "./RestaurantTheme";
 
 export function OfficeFloor() {
+  const theme = useRestaurantTheme();
+
   const kitchenTiles = useMemo(() => {
     const tiles: { color: string; x: number; z: number }[] = [];
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 6; j++) {
         tiles.push({
-          color: (i + j) % 2 === 0 ? "#e8e0d4" : "#d4c8b8",
+          color: (i + j) % 2 === 0 ? theme.kitchenFloorA : theme.kitchenFloorB,
           x: -1 + i * 2,
           z: -5 + j * 2,
         });
       }
     }
     return tiles;
-  }, []);
+  }, [theme.kitchenFloorA, theme.kitchenFloorB]);
 
   return (
     <group>
@@ -21,59 +24,59 @@ export function OfficeFloor() {
       {kitchenTiles.map((tile, idx) => (
         <mesh key={`kt-${idx}`} rotation={[-Math.PI / 2, 0, 0]} position={[tile.x, -0.01, tile.z]} receiveShadow>
           <planeGeometry args={[2, 2]} />
-          <meshStandardMaterial color={tile.color} />
+          <meshStandardMaterial color={tile.color} metalness={theme.floorMetalness} roughness={theme.floorRoughness} />
         </mesh>
       ))}
 
       {/* Corridor / work area (center) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[5.5, -0.01, 0]} receiveShadow>
         <planeGeometry args={[6, 12]} />
-        <meshStandardMaterial color="#c9b896" />
+        <meshStandardMaterial color={theme.corridorFloor} metalness={theme.floorMetalness} roughness={theme.floorRoughness} />
       </mesh>
 
       {/* Dining area (right zone) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[11.5, -0.01, 0]} receiveShadow>
         <planeGeometry args={[6, 12]} />
-        <meshStandardMaterial color="#5c3a1e" />
+        <meshStandardMaterial color={theme.diningFloor} metalness={theme.floorMetalness * 1.5} roughness={theme.floorRoughness * 0.8} />
       </mesh>
 
       {/* Left wall */}
       <mesh position={[-1, 1.5, 0]}>
         <boxGeometry args={[0.25, 3, 12]} />
-        <meshStandardMaterial color="#f5e6d0" />
+        <meshStandardMaterial color={theme.wallLeft} metalness={theme.wallMetalness} roughness={theme.wallRoughness} />
       </mesh>
       {/* Right wall */}
       <mesh position={[14, 1.5, 0]}>
         <boxGeometry args={[0.25, 3, 12]} />
-        <meshStandardMaterial color="#8b4513" />
+        <meshStandardMaterial color={theme.wallRight} metalness={theme.wallMetalness} roughness={theme.wallRoughness} />
       </mesh>
       {/* Back wall */}
       <mesh position={[6.5, 1.5, -6]}>
         <boxGeometry args={[15.2, 3, 0.25]} />
-        <meshStandardMaterial color="#c9a87c" />
+        <meshStandardMaterial color={theme.wallBack} metalness={theme.wallMetalness} roughness={theme.wallRoughness} />
       </mesh>
       {/* Front wall */}
       <mesh position={[6.5, 1.5, 6]}>
         <boxGeometry args={[15.2, 3, 0.25]} />
-        <meshStandardMaterial color="#c9a87c" />
+        <meshStandardMaterial color={theme.wallFront} metalness={theme.wallMetalness} roughness={theme.wallRoughness} />
       </mesh>
 
       {/* Wall trim - left */}
       <mesh position={[-0.85, 1.8, 0]}>
         <boxGeometry args={[0.05, 0.6, 11.5]} />
-        <meshStandardMaterial color="#4a7c59" />
+        <meshStandardMaterial color={theme.wallTrim} metalness={theme.wallMetalness * 2} roughness={theme.wallRoughness * 0.7} />
       </mesh>
 
       {/* Wall trim - back */}
       <mesh position={[6.5, 1.5, -5.85]}>
         <boxGeometry args={[14.8, 0.6, 0.05]} />
-        <meshStandardMaterial color="#4a7c59" />
+        <meshStandardMaterial color={theme.wallTrim} metalness={theme.wallMetalness * 2} roughness={theme.wallRoughness * 0.7} />
       </mesh>
 
       {/* Ceiling */}
       <mesh position={[6.5, 2.99, 0]}>
         <boxGeometry args={[15.2, 0.05, 12.2]} />
-        <meshStandardMaterial color="#f5eedc" opacity={0.2} transparent />
+        <meshStandardMaterial color={theme.ceiling} opacity={theme.ceilingOpacity} transparent />
       </mesh>
     </group>
   );

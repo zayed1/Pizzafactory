@@ -1,64 +1,78 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useOfficeGame, CustomerTable as CustomerTableType } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
+import { useRestaurantTheme } from "./RestaurantTheme";
 
 const INTERACT_DISTANCE = 2.0;
 
-function Chair({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+// Deterministic customer appearance based on table id + color hash
+const SKIN_TONES = ["#deb887", "#c68642", "#8d5524", "#f1c27d", "#e0ac69", "#ffdbac"];
+const ACCESSORY_SEED_COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#f97316", "#ec4899"];
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function Chair({ position, rotation, theme }: { position: [number, number, number]; rotation: number; theme: ReturnType<typeof useRestaurantTheme> }) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh position={[-0.12, 0.13, -0.12]}>
         <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.chairLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0.12, 0.13, -0.12]}>
         <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.chairLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[-0.12, 0.13, 0.12]}>
         <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.chairLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0.12, 0.13, 0.12]}>
         <cylinderGeometry args={[0.025, 0.025, 0.26, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.chairLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0, 0.27, 0]} castShadow>
         <boxGeometry args={[0.3, 0.03, 0.3]} />
-        <meshStandardMaterial color="#8b5a2b" />
+        <meshStandardMaterial color={theme.chairSeat} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0, 0.42, -0.13]} castShadow>
         <boxGeometry args={[0.28, 0.28, 0.03]} />
-        <meshStandardMaterial color="#8b5a2b" />
+        <meshStandardMaterial color={theme.chairSeat} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
     </group>
   );
 }
 
-function DiningTable() {
+function DiningTable({ theme }: { theme: ReturnType<typeof useRestaurantTheme> }) {
   return (
     <group>
       <mesh position={[0, 0.38, 0.45]} castShadow receiveShadow>
         <boxGeometry args={[0.9, 0.04, 0.7]} />
-        <meshStandardMaterial color="#6d3710" />
+        <meshStandardMaterial color={theme.tableSurface} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[-0.35, 0.18, 0.2]}>
         <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.tableLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0.35, 0.18, 0.2]}>
         <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.tableLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[-0.35, 0.18, 0.7]}>
         <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.tableLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
       <mesh position={[0.35, 0.18, 0.7]}>
         <cylinderGeometry args={[0.03, 0.03, 0.36, 6]} />
-        <meshStandardMaterial color="#5c3d1e" />
+        <meshStandardMaterial color={theme.tableLeg} metalness={theme.furnitureMetalness} roughness={theme.furnitureRoughness} />
       </mesh>
 
       <mesh position={[-0.2, 0.41, 0.35]}>
@@ -141,6 +155,20 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
   const exitAnim = useRef(0);
   const [showExit, setShowExit] = useState(false);
 
+  // Deterministic appearance from customer color + hair color (acts as a seed)
+  const appearance = useMemo(() => {
+    const seed = hashCode((table.customerColor || "") + (table.customerHairColor || "") + table.id);
+    const skinTone = SKIN_TONES[seed % SKIN_TONES.length];
+    const accColor = ACCESSORY_SEED_COLORS[(seed >> 4) % ACCESSORY_SEED_COLORS.length];
+    const hasGlasses = (seed % 5) === 0; // 20% chance
+    const isTall = (seed % 7) === 0; // ~14% chance
+    const isShort = !isTall && (seed % 6) === 0; // ~14% chance (child-like)
+    const hasScarf = (seed % 8) === 0; // ~12% chance
+    const hasBag = (seed % 9) === 0; // ~11% chance
+    const heightScale = isTall ? 1.15 : isShort ? 0.75 : 1.0;
+    return { skinTone, accColor, hasGlasses, isTall, isShort, hasScarf, hasBag, heightScale };
+  }, [table.customerColor, table.customerHairColor, table.id]);
+
   useFrame((_, delta) => {
     if (table.hasCustomer && animProgress.current < 1) {
       animProgress.current = Math.min(1, animProgress.current + delta * 4);
@@ -178,6 +206,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
   const hairColor = table.customerHairColor || "#4a3728";
   const mood = getMoodEmoji(patienceRatio);
   const isVIP = table.customerType === "vip";
+  const { skinTone, accColor, hasGlasses, hasScarf, hasBag, heightScale } = appearance;
 
   return (
     <group ref={groupRef} position={[0, 0, 0.9]}>
@@ -189,74 +218,122 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
         </mesh>
       )}
 
-      <mesh position={[0, 0.15, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
-        <meshStandardMaterial color="#1e293b" />
-      </mesh>
-
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <cylinderGeometry args={[0.16, 0.12, 0.25, 8]} />
-        <meshStandardMaterial color={bodyColor} />
-      </mesh>
-
-      <mesh position={[0, 0.62, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.16, 0.2, 8]} />
-        <meshStandardMaterial color={bodyColor} />
-      </mesh>
-
-      <mesh position={[0, 0.82, 0]} castShadow>
-        <sphereGeometry args={[0.13, 8, 8]} />
-        <meshStandardMaterial color="#deb887" />
-      </mesh>
-
-      <mesh position={[0, 0.92, 0]} castShadow>
-        <sphereGeometry args={[0.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color={hairColor} />
-      </mesh>
-
-      {/* VIP crown */}
-      {isVIP && (
-        <mesh position={[0, 1.0, 0]}>
-          <coneGeometry args={[0.08, 0.1, 5]} />
-          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.5} />
+      <group scale={[1, heightScale, 1]}>
+        {/* Legs */}
+        <mesh position={[0, 0.15, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
+          <meshStandardMaterial color="#1e293b" />
         </mesh>
-      )}
 
-      <mesh position={[0.04, 0.84, 0.1]}>
-        <sphereGeometry args={[0.02, 6, 6]} />
-        <meshStandardMaterial color="#1e293b" />
-      </mesh>
-      <mesh position={[-0.04, 0.84, 0.1]}>
-        <sphereGeometry args={[0.02, 6, 6]} />
-        <meshStandardMaterial color="#1e293b" />
-      </mesh>
-
-      {patienceRatio > 0.4 ? (
-        <mesh position={[0, 0.76, 0.11]}>
-          <boxGeometry args={[0.06, 0.015, 0.01]} />
-          <meshStandardMaterial color={patienceRatio > 0.7 ? "#22c55e" : "#f59e0b"} />
+        {/* Body - lower */}
+        <mesh position={[0, 0.4, 0]} castShadow>
+          <cylinderGeometry args={[0.16, 0.12, 0.25, 8]} />
+          <meshStandardMaterial color={bodyColor} />
         </mesh>
-      ) : (
-        <mesh position={[0, 0.76, 0.11]}>
-          <boxGeometry args={[0.06, 0.015, 0.01]} />
-          <meshStandardMaterial color="#ef4444" />
-        </mesh>
-      )}
 
-      {patienceRatio <= 0.25 && (
-        <>
-          <mesh position={[0.05, 0.86, 0.1]} rotation={[0, 0, -0.2]}>
-            <boxGeometry args={[0.04, 0.008, 0.008]} />
-            <meshStandardMaterial color="#1e293b" />
+        {/* Body - upper */}
+        <mesh position={[0, 0.62, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.16, 0.2, 8]} />
+          <meshStandardMaterial color={bodyColor} />
+        </mesh>
+
+        {/* Scarf */}
+        {hasScarf && (
+          <mesh position={[0, 0.68, 0]}>
+            <torusGeometry args={[0.13, 0.025, 6, 12]} />
+            <meshStandardMaterial color={accColor} />
           </mesh>
-          <mesh position={[-0.05, 0.86, 0.1]} rotation={[0, 0, 0.2]}>
-            <boxGeometry args={[0.04, 0.008, 0.008]} />
-            <meshStandardMaterial color="#1e293b" />
-          </mesh>
-        </>
-      )}
+        )}
 
-      <group position={[0, 1.2, 0]}>
+        {/* Head */}
+        <mesh position={[0, 0.82, 0]} castShadow>
+          <sphereGeometry args={[0.13, 8, 8]} />
+          <meshStandardMaterial color={skinTone} />
+        </mesh>
+
+        {/* Hair */}
+        <mesh position={[0, 0.92, 0]} castShadow>
+          <sphereGeometry args={[0.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={hairColor} />
+        </mesh>
+
+        {/* Glasses */}
+        {hasGlasses && (
+          <>
+            {/* Left lens */}
+            <mesh position={[0.055, 0.84, 0.12]}>
+              <torusGeometry args={[0.03, 0.005, 4, 8]} />
+              <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.3} />
+            </mesh>
+            {/* Right lens */}
+            <mesh position={[-0.055, 0.84, 0.12]}>
+              <torusGeometry args={[0.03, 0.005, 4, 8]} />
+              <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.3} />
+            </mesh>
+            {/* Bridge */}
+            <mesh position={[0, 0.84, 0.13]}>
+              <boxGeometry args={[0.04, 0.005, 0.005]} />
+              <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.3} />
+            </mesh>
+          </>
+        )}
+
+        {/* VIP crown */}
+        {isVIP && (
+          <mesh position={[0, 1.0, 0]}>
+            <coneGeometry args={[0.08, 0.1, 5]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.5} />
+          </mesh>
+        )}
+
+        {/* Eyes */}
+        <mesh position={[0.04, 0.84, 0.1]}>
+          <sphereGeometry args={[hasGlasses ? 0.018 : 0.02, 6, 6]} />
+          <meshStandardMaterial color="#1e293b" />
+        </mesh>
+        <mesh position={[-0.04, 0.84, 0.1]}>
+          <sphereGeometry args={[hasGlasses ? 0.018 : 0.02, 6, 6]} />
+          <meshStandardMaterial color="#1e293b" />
+        </mesh>
+
+        {/* Mouth */}
+        {patienceRatio > 0.4 ? (
+          <mesh position={[0, 0.76, 0.11]}>
+            <boxGeometry args={[0.06, 0.015, 0.01]} />
+            <meshStandardMaterial color={patienceRatio > 0.7 ? "#22c55e" : "#f59e0b"} />
+          </mesh>
+        ) : (
+          <mesh position={[0, 0.76, 0.11]}>
+            <boxGeometry args={[0.06, 0.015, 0.01]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        )}
+
+        {/* Angry eyebrows */}
+        {patienceRatio <= 0.25 && (
+          <>
+            <mesh position={[0.05, 0.86, 0.1]} rotation={[0, 0, -0.2]}>
+              <boxGeometry args={[0.04, 0.008, 0.008]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            <mesh position={[-0.05, 0.86, 0.1]} rotation={[0, 0, 0.2]}>
+              <boxGeometry args={[0.04, 0.008, 0.008]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+          </>
+        )}
+
+        {/* Bag accessory */}
+        {hasBag && (
+          <mesh position={[0.2, 0.35, 0]} castShadow>
+            <boxGeometry args={[0.08, 0.12, 0.06]} />
+            <meshStandardMaterial color={accColor} />
+          </mesh>
+        )}
+      </group>
+
+      {/* Patience bar (outside scale group so it stays readable) */}
+      <group position={[0, 1.2 * heightScale, 0]}>
         <mesh>
           <boxGeometry args={[0.5, 0.07, 0.05]} />
           <meshStandardMaterial color="#334155" />
@@ -268,7 +345,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
       </group>
 
       <Text
-        position={[0.32, 1.2, 0]}
+        position={[0.32, 1.2 * heightScale, 0]}
         fontSize={0.18}
         anchorX="center"
       >
@@ -276,7 +353,7 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
       </Text>
 
       <Text
-        position={[0, 1.45, 0]}
+        position={[0, 1.45 * heightScale, 0]}
         fontSize={0.16}
         color={color}
         anchorX="center"
@@ -306,6 +383,7 @@ export function CustomerTableComp({
   const [isNear, setIsNear] = useState(false);
   const carrying = useOfficeGame((s) => s.carrying);
   const deliverToTable = useOfficeGame((s) => s.deliverToTable);
+  const theme = useRestaurantTheme();
 
   useFrame(() => {
     if (!playerRef.current) return;
@@ -340,10 +418,10 @@ export function CustomerTableComp({
 
   return (
     <group position={table.position}>
-      <DiningTable />
+      <DiningTable theme={theme} />
 
-      <Chair position={[-0.55, 0, 0.45]} rotation={Math.PI / 2} />
-      <Chair position={[0.55, 0, 0.45]} rotation={-Math.PI / 2} />
+      <Chair position={[-0.55, 0, 0.45]} rotation={Math.PI / 2} theme={theme} />
+      <Chair position={[0.55, 0, 0.45]} rotation={-Math.PI / 2} theme={theme} />
 
       <CustomerModel table={table} />
 

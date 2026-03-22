@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useState, useEffect } from "react";
 import { KeyboardControls } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import "@fontsource/inter";
 import { useOfficeGame } from "./lib/stores/useOfficeGame";
 import { OfficeScene } from "./game/OfficeScene";
@@ -142,6 +143,14 @@ function App() {
           <Suspense fallback={null}>
             <OfficeScene />
           </Suspense>
+          <EffectComposer>
+            <Bloom
+              intensity={0.4}
+              luminanceThreshold={0.8}
+              luminanceSmoothing={0.9}
+              mipmapBlur
+            />
+          </EffectComposer>
         </Canvas>
         <GameHUD />
         <PauseMenu />
