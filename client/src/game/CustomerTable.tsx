@@ -99,18 +99,31 @@ function getMoodEmoji(patienceRatio: number): string {
   return "😠";
 }
 
-function CustomerTypeBadge({ type, specialOrder, servingsNeeded, servingsReceived }: { type: string; specialOrder: string; servingsNeeded: number; servingsReceived: number }) {
+const RECIPE_COLORS: Record<string, string> = {
+  classic: "#f97316",
+  spicy: "#ef4444",
+  special: "#a855f7",
+};
+
+const RECIPE_LABELS: Record<string, string> = {
+  classic: "\u{1F355}",
+  spicy: "\u{1F336}\uFE0F",
+  special: "\u2B50",
+};
+
+function CustomerTypeBadge({ type, specialOrder, servingsNeeded, servingsReceived, recipe }: { type: string; specialOrder: string; servingsNeeded: number; servingsReceived: number; recipe: string }) {
   const badges: Record<string, { text: string; color: string }> = {
     vip: { text: "\u2605 VIP", color: "#fbbf24" },
     tipper: { text: "\u{1F4B5} TIP", color: "#22c55e" },
     patient: { text: "\u{1F60A} CHILL", color: "#60a5fa" },
     rush: { text: "\u26A1 RUSH", color: "#ef4444" },
+    boss: { text: "\u{1F47E} BOSS", color: "#ef4444" },
   };
 
   const specBadges: Record<string, { text: string; color: string }> = {
     double: { text: `\u{1F355}x2 ${servingsReceived}/${servingsNeeded}`, color: "#f97316" },
     express: { text: "\u26A1 EXPRESS", color: "#ef4444" },
-    group: { text: `\u{1F37D}\uFE0F x3 ${servingsReceived}/${servingsNeeded}`, color: "#a855f7" },
+    group: { text: `\u{1F37D}\uFE0F x${servingsNeeded} ${servingsReceived}/${servingsNeeded}`, color: "#a855f7" },
   };
 
   const badge = type !== "normal" ? badges[type] : null;
@@ -142,6 +155,17 @@ function CustomerTypeBadge({ type, specialOrder, servingsNeeded, servingsReceive
           fontWeight="bold"
         >
           {specBadge.text}
+        </Text>
+      )}
+      {/* Recipe indicator */}
+      {recipe && recipe !== "classic" && (
+        <Text
+          position={[0.35, 1.2, 0]}
+          fontSize={0.16}
+          color={RECIPE_COLORS[recipe] || "#f97316"}
+          anchorX="center"
+        >
+          {RECIPE_LABELS[recipe] || ""}
         </Text>
       )}
     </>
@@ -206,10 +230,15 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
   const hairColor = table.customerHairColor || "#4a3728";
   const mood = getMoodEmoji(patienceRatio);
   const isVIP = table.customerType === "vip";
-  const { skinTone, accColor, hasGlasses, hasScarf, hasBag, heightScale } = appearance;
+  const isBoss = table.customerType === "boss";
+  const { skinTone, accColor, hasGlasses, hasScarf, hasBag, heightScale: baseHeightScale } = appearance;
+  const heightScale = isBoss ? baseHeightScale * 1.5 : baseHeightScale;
+
+  // Walk animation: slide from entrance
+  const walkOffset = table.hasCustomer ? (1 - table.walkProgress) * 3 : 0;
 
   return (
-    <group ref={groupRef} position={[0, 0, 0.9]}>
+    <group ref={groupRef} position={[walkOffset, 0, 0.9]}>
       {/* VIP glow ring */}
       {isVIP && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -284,6 +313,20 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
             <coneGeometry args={[0.08, 0.1, 5]} />
             <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.5} />
           </mesh>
+        )}
+
+        {/* Boss horns and glow */}
+        {isBoss && (
+          <>
+            <mesh position={[0.1, 1.0, 0]} rotation={[0, 0, 0.3]}>
+              <coneGeometry args={[0.04, 0.15, 6]} />
+              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.6} />
+            </mesh>
+            <mesh position={[-0.1, 1.0, 0]} rotation={[0, 0, -0.3]}>
+              <coneGeometry args={[0.04, 0.15, 6]} />
+              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.6} />
+            </mesh>
+          </>
         )}
 
         {/* Eyes */}
@@ -363,11 +406,15 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
         {Math.ceil(table.customerMaxTime - table.customerTimer)}s
       </Text>
 
-      <CustomerTypeBadge type={table.customerType} specialOrder={table.specialOrder} servingsNeeded={table.servingsNeeded} servingsReceived={table.servingsReceived} />
+      <CustomerTypeBadge type={table.customerType} specialOrder={table.specialOrder} servingsNeeded={table.servingsNeeded} servingsReceived={table.servingsReceived} recipe={table.requestedRecipe} />
 
       {/* VIP light effect */}
       {isVIP && (
         <pointLight position={[0, 0.5, 0]} intensity={1.5} color="#fbbf24" distance={2} />
+      )}
+      {/* Boss glow effect */}
+      {isBoss && (
+        <pointLight position={[0, 0.5, 0]} intensity={2.0} color="#ef4444" distance={3} />
       )}
     </group>
   );

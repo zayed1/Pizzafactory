@@ -346,10 +346,26 @@ export function GameHUD() {
   const levelUpLevel = useOfficeGame((s) => s.levelUpLevel);
   const dismissLevelUp = useOfficeGame((s) => s.dismissLevelUp);
   const comboCount = useOfficeGame((s) => s.comboCount);
+  const activePowerUp = useOfficeGame((s) => s.activePowerUp);
+  const currentHint = useOfficeGame((s) => s.currentHint);
+  const levelStars = useOfficeGame((s) => s.levelStars);
+  const getTitle = useOfficeGame((s) => s.getTitle);
   const unlockedTables = tables.filter((t) => t.unlocked).length;
   const totalTables = tables.length;
   const isMobile = useIsMobile();
   const [showUpgrades, setShowUpgrades] = useState(!isMobile);
+
+  // Calculate efficiency
+  const busyOvens = ovens.filter(o => o.isCooking || o.pizzaReady).length;
+  const busyPrep = prepEmployees.filter(e => e.isWorking || e.pizzaReady).length;
+  const servedTables = tables.filter(t => t.unlocked && t.hasCustomer).length;
+  const efficiency = Math.round(
+    ((busyOvens / Math.max(1, ovens.length)) * 33 +
+    (busyPrep / Math.max(1, prepEmployees.length)) * 33 +
+    (servedTables / Math.max(1, unlockedTables)) * 34)
+  );
+
+  const titleInfo = getTitle();
 
   const elapsed = gameStartTime > 0 ? Math.max(1, Math.floor((Date.now() - gameStartTime) / 60000)) : 1;
   const earningsPerMin = Math.round(totalMoneyEarned / elapsed);
@@ -525,8 +541,16 @@ export function GameHUD() {
           }}
         >
           <span style={{ color: "#a855f7", fontSize: isMobile ? 11 : 14, fontWeight: "bold" }}>
-            Lv.{gameLevel}
+            {titleInfo.icon} Lv.{gameLevel}
           </span>
+          {/* Stars for previous level */}
+          {levelStars[gameLevel - 1] && !isMobile && (
+            <span style={{ fontSize: 10, letterSpacing: 1 }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <span key={i} style={{ color: i < (levelStars[gameLevel - 1] || 0) ? "#fbbf24" : "#4b5563" }}>{"\u2605"}</span>
+              ))}
+            </span>
+          )}
           <div style={{
             flex: 1,
             height: isMobile ? 4 : 6,
@@ -572,6 +596,116 @@ export function GameHUD() {
           )}
         </div>
       </div>
+
+      {/* Active Power-Up Bar */}
+      {activePowerUp && (
+        <div style={{
+          position: "absolute",
+          top: isMobile ? 38 : 48,
+          right: isMobile ? 4 : 12,
+          background: "rgba(0,0,0,0.85)",
+          borderRadius: 10,
+          padding: "4px 12px",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          border: "2px solid rgba(6,182,212,0.5)",
+          backdropFilter: "blur(10px)",
+          animation: "pulse 1.5s ease-in-out infinite",
+          zIndex: 40,
+          pointerEvents: "none",
+        }}>
+          <span style={{ fontSize: 14 }}>
+            {activePowerUp.type === "speed_boost" ? "\u26A1" : activePowerUp.type === "freeze_patience" ? "\u2744\uFE0F" : "\u{1F4B0}"}
+          </span>
+          <div style={{
+            width: 40,
+            height: 4,
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: 2,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              width: `${(activePowerUp.remaining / activePowerUp.duration) * 100}%`,
+              height: "100%",
+              background: "#06b6d4",
+              borderRadius: 2,
+              transition: "width 0.3s",
+            }} />
+          </div>
+          <span style={{ color: "#06b6d4", fontSize: 10, fontFamily: "'Inter', sans-serif" }}>
+            {Math.ceil(activePowerUp.remaining)}s
+          </span>
+        </div>
+      )}
+
+      {/* Efficiency Meter */}
+      {!isMobile && (
+        <div style={{
+          position: "absolute",
+          bottom: 70,
+          right: 12,
+          background: "rgba(0,0,0,0.8)",
+          borderRadius: 10,
+          padding: "6px 10px",
+          backdropFilter: "blur(10px)",
+          border: `1px solid ${efficiency > 70 ? "rgba(34,197,94,0.3)" : efficiency > 40 ? "rgba(251,191,36,0.3)" : "rgba(239,68,68,0.3)"}`,
+          pointerEvents: "none",
+          zIndex: 30,
+        }}>
+          <div style={{ color: "#94a3b8", fontSize: 9, fontFamily: "'Inter', sans-serif", marginBottom: 2 }}>Efficiency</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{
+              width: 40,
+              height: 6,
+              background: "rgba(255,255,255,0.1)",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}>
+              <div style={{
+                width: `${efficiency}%`,
+                height: "100%",
+                background: efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444",
+                borderRadius: 3,
+                transition: "width 0.5s ease",
+              }} />
+            </div>
+            <span style={{
+              color: efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444",
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              {efficiency}%
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Smart Hint */}
+      {currentHint && (
+        <div style={{
+          position: "absolute",
+          bottom: isMobile ? 60 : 100,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(0,0,0,0.85)",
+          borderRadius: 12,
+          padding: "6px 16px",
+          color: "#fbbf24",
+          fontSize: isMobile ? 11 : 13,
+          fontWeight: 600,
+          fontFamily: "'Inter', sans-serif",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(251,191,36,0.3)",
+          animation: "notif-slide 0.3s ease-out",
+          pointerEvents: "none",
+          zIndex: 35,
+          whiteSpace: "nowrap",
+        }}>
+          {"\u{1F4A1}"} {currentHint}
+        </div>
+      )}
 
       {/* === HOW TO PLAY (desktop only) === */}
       {!isMobile && (

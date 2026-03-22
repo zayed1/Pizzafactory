@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useOfficeGame, PLAYER_COLORS, HAT_DEFS } from "../lib/stores/useOfficeGame";
-import type { HatType } from "../lib/stores/useOfficeGame";
+import { useOfficeGame, PLAYER_COLORS, HAT_DEFS, SKILL_DEFS, TITLE_DEFS } from "../lib/stores/useOfficeGame";
+import type { HatType, SkillId } from "../lib/stores/useOfficeGame";
 
-type PauseTab = "stats" | "customize" | "prestige";
+type PauseTab = "stats" | "customize" | "prestige" | "skills";
 
 export function PauseMenu() {
   const phase = useOfficeGame((s) => s.phase);
@@ -30,6 +30,16 @@ export function PauseMenu() {
   const setPlayerColor = useOfficeGame((s) => s.setPlayerColor);
   const setPlayerHat = useOfficeGame((s) => s.setPlayerHat);
   const unlockCosmetic = useOfficeGame((s) => s.unlockCosmetic);
+
+  const skillPoints = useOfficeGame((s) => s.skillPoints);
+  const skills = useOfficeGame((s) => s.skills);
+  const unlockSkill = useOfficeGame((s) => s.unlockSkill);
+  const levelStars = useOfficeGame((s) => s.levelStars);
+  const zoneVisits = useOfficeGame((s) => s.zoneVisits);
+  const sessionBestCombo = useOfficeGame((s) => s.sessionBestCombo);
+  const sessionMaxSingleEarning = useOfficeGame((s) => s.sessionMaxSingleEarning);
+  const getTitle = useOfficeGame((s) => s.getTitle);
+  const titleInfo = getTitle();
 
   const [tab, setTab] = useState<PauseTab>("stats");
   const [confirmPrestige, setConfirmPrestige] = useState(false);
@@ -108,13 +118,16 @@ export function PauseMenu() {
             )}
           </h2>
           <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
-            {minutes}:{seconds.toString().padStart(2, "0")} | ${money.toLocaleString()}
+            {titleInfo.icon} {titleInfo.title} | {minutes}:{seconds.toString().padStart(2, "0")} | ${money.toLocaleString()}
           </p>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
           <button onClick={() => setTab("stats")} style={tabStyle("stats")}>Stats</button>
+          <button onClick={() => setTab("skills")} style={tabStyle("skills")}>
+            Skills {skillPoints > 0 && <span style={{ color: "#fbbf24", marginLeft: 4 }}>({skillPoints})</span>}
+          </button>
           <button onClick={() => setTab("customize")} style={tabStyle("customize")}>Customize</button>
           <button onClick={() => setTab("prestige")} style={tabStyle("prestige")}>Prestige</button>
         </div>
@@ -130,10 +143,12 @@ export function PauseMenu() {
               border: "1px solid rgba(249,115,22,0.2)",
             }}>
               <div style={{ color: "#f97316", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>This Session</div>
-              <div style={{ display: "flex", gap: 16 }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <MiniStat icon={"\u{1F355}"} label="Pizzas" value={`${sessionPizzas}`} />
                 <MiniStat icon={"\u{1F4B0}"} label="Earned" value={`$${sessionEarned > 0 ? sessionEarned : 0}`} />
                 <MiniStat icon={"\u26A1"} label="Fastest" value={fastestDelivery < 999 ? `${fastestDelivery.toFixed(1)}s` : "-"} />
+                <MiniStat icon={"\u{1F4A5}"} label="Best Combo" value={`x${sessionBestCombo}`} />
+                <MiniStat icon={"\u{1F4B5}"} label="Max Single" value={`$${sessionMaxSingleEarning}`} />
               </div>
             </div>
 
@@ -147,6 +162,79 @@ export function PauseMenu() {
               <StatBox label="$/min" value={`$${earningsPerMin}`} color="#06b6d4" />
               <StatBox label="Factory" value={`${ovens.length}O ${prepEmployees.length}P ${unlockedTables}T`} color="#94a3b8" />
             </div>
+
+            {/* Level Stars */}
+            {Object.keys(levelStars).length > 0 && (
+              <div style={{
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: 10,
+                padding: "8px 12px",
+                marginBottom: 12,
+                border: "1px solid rgba(251,191,36,0.15)",
+              }}>
+                <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Level Stars</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {Object.entries(levelStars).map(([lvl, stars]) => (
+                    <div key={lvl} style={{ textAlign: "center" }}>
+                      <div style={{ color: "#94a3b8", fontSize: 9 }}>Lv.{lvl}</div>
+                      <div style={{ fontSize: 10, letterSpacing: 1 }}>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <span key={i} style={{ color: i < stars ? "#fbbf24" : "#4b5563" }}>{"\u2605"}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Heatmap */}
+            {Object.keys(zoneVisits).length > 0 && (
+              <div style={{
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: 10,
+                padding: "8px 12px",
+                marginBottom: 12,
+                border: "1px solid rgba(6,182,212,0.15)",
+              }}>
+                <div style={{ color: "#06b6d4", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Movement Heatmap</div>
+                <div style={{ display: "flex", gap: 4, height: 40 }}>
+                  {["dough", "oven", "prep", "dining"].map(zone => {
+                    const total = Object.values(zoneVisits).reduce((a, b) => a + b, 0) || 1;
+                    const pct = ((zoneVisits[zone] || 0) / total) * 100;
+                    const colors: Record<string, string> = { dough: "#f5deb3", oven: "#f97316", prep: "#a855f7", dining: "#22c55e" };
+                    return (
+                      <div key={zone} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <div style={{
+                          flex: 1,
+                          width: "100%",
+                          background: "rgba(255,255,255,0.05)",
+                          borderRadius: 4,
+                          position: "relative",
+                          overflow: "hidden",
+                        }}>
+                          <div style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: `${pct}%`,
+                            background: colors[zone] || "#94a3b8",
+                            opacity: 0.6,
+                            borderRadius: 4,
+                            transition: "height 0.3s ease",
+                          }} />
+                        </div>
+                        <span style={{ color: colors[zone] || "#94a3b8", fontSize: 8, fontWeight: 600 }}>
+                          {zone.charAt(0).toUpperCase() + zone.slice(1)}
+                        </span>
+                        <span style={{ color: "#64748b", fontSize: 7 }}>{Math.round(pct)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -224,6 +312,112 @@ export function PauseMenu() {
                 <span style={{ fontSize: 20 }}>{"\u274C"}</span>
                 <span style={{ color: "#e2e8f0", fontSize: 9, fontWeight: 600 }}>None</span>
               </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "skills" && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}>
+              <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>Skill Tree</div>
+              <div style={{
+                background: "rgba(251,191,36,0.15)",
+                borderRadius: 8,
+                padding: "3px 10px",
+                color: "#fbbf24",
+                fontSize: 11,
+                fontWeight: 700,
+                border: "1px solid rgba(251,191,36,0.3)",
+              }}>
+                {skillPoints} points
+              </div>
+            </div>
+            <div style={{ color: "#64748b", fontSize: 10, marginBottom: 10 }}>
+              Earn 1 skill point per level up. Skills persist through prestige.
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {SKILL_DEFS.map((def) => {
+                const level = skills[def.id] || 0;
+                const maxed = level >= def.maxLevel;
+                const canUnlock = skillPoints > 0 && !maxed;
+                return (
+                  <button
+                    key={def.id}
+                    onClick={() => canUnlock && unlockSkill(def.id as SkillId)}
+                    disabled={!canUnlock}
+                    style={{
+                      background: maxed
+                        ? "rgba(34,197,94,0.15)"
+                        : canUnlock
+                        ? "rgba(168,85,247,0.15)"
+                        : "rgba(255,255,255,0.03)",
+                      border: maxed
+                        ? "1px solid rgba(34,197,94,0.3)"
+                        : canUnlock
+                        ? "1px solid rgba(168,85,247,0.4)"
+                        : "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 10,
+                      padding: "8px 10px",
+                      cursor: canUnlock ? "pointer" : "default",
+                      textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize: 16 }}>{def.icon}</span>
+                      <span style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 700 }}>{def.name}</span>
+                    </div>
+                    <div style={{ color: "#94a3b8", fontSize: 9, lineHeight: 1.4, marginBottom: 4 }}>
+                      {def.description}
+                    </div>
+                    <div style={{ display: "flex", gap: 2 }}>
+                      {Array.from({ length: def.maxLevel }).map((_, i) => (
+                        <div key={i} style={{
+                          width: 12,
+                          height: 4,
+                          borderRadius: 2,
+                          background: i < level ? "#a855f7" : "rgba(255,255,255,0.1)",
+                        }} />
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Title / Rank Display */}
+            <div style={{
+              background: "linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.05))",
+              borderRadius: 10,
+              padding: "10px 14px",
+              marginTop: 12,
+              border: "1px solid rgba(251,191,36,0.15)",
+              textAlign: "center",
+            }}>
+              <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 4 }}>Current Rank</div>
+              <div style={{ color: "#fbbf24", fontSize: 18, fontWeight: 800 }}>
+                {titleInfo.icon} {titleInfo.title}
+              </div>
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, flexWrap: "wrap" }}>
+                {TITLE_DEFS.map((t, i) => {
+                  const active = titleInfo.title === t.title;
+                  const unlocked = gameLevel >= t.minLevel && totalPizzasServed >= t.minPizzas;
+                  return (
+                    <span key={i} style={{
+                      fontSize: 10,
+                      color: active ? "#fbbf24" : unlocked ? "#94a3b8" : "#4b5563",
+                      fontWeight: active ? 700 : 400,
+                    }}>
+                      {t.icon}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

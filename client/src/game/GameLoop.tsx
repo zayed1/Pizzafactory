@@ -11,9 +11,14 @@ export function GameLoop() {
   const customerSpawnInterval = useOfficeGame((s) => s.customerSpawnInterval);
   const activeEvent = useOfficeGame((s) => s.activeEvent);
   const phase = useOfficeGame((s) => s.phase);
+  const updatePowerUp = useOfficeGame((s) => s.updatePowerUp);
+  const spawnPowerUp = useOfficeGame((s) => s.spawnPowerUp);
+  const gameLevel = useOfficeGame((s) => s.gameLevel);
   const customerTimer = useRef(0);
   const eventTimer = useRef(0);
+  const powerUpTimer = useRef(0);
   const firstSpawn = useRef(false);
+  const hintTimer = useRef(0);
 
   useFrame((_, delta) => {
     if (phase !== "playing") return;
@@ -27,6 +32,7 @@ export function GameLoop() {
     updateCustomerTimers(delta);
     updateStreak(delta);
     updateEvent(delta);
+    updatePowerUp(delta);
 
     // Customer spawning - faster during rush hour
     const spawnInterval = activeEvent?.type === "rush_hour"
@@ -45,6 +51,51 @@ export function GameLoop() {
       eventTimer.current = 0;
       if (Math.random() < 0.4) {
         triggerRandomEvent();
+      }
+    }
+
+    // Power-up spawning every 25-40 seconds (from level 2+)
+    if (gameLevel >= 2) {
+      powerUpTimer.current += delta;
+      if (powerUpTimer.current >= 25 + Math.random() * 15) {
+        powerUpTimer.current = 0;
+        if (Math.random() < 0.35) {
+          spawnPowerUp();
+        }
+      }
+    }
+
+    // Smart hints: check idle time
+    hintTimer.current += delta;
+    if (hintTimer.current >= 2) {
+      hintTimer.current = 0;
+      const s = useOfficeGame.getState();
+      const idleTime = (Date.now() - s.lastActivityTime) / 1000;
+      if (idleTime > 5) {
+        // Generate contextual hint
+        let hint: string | null = null;
+        const readyOven = s.ovens.find(o => o.pizzaReady);
+        const readyPrep = s.prepEmployees.find(e => e.pizzaReady);
+        const waitingCustomer = s.tables.find(t => t.hasCustomer && !t.served && t.customerTimer / t.customerMaxTime > 0.6);
+        const emptyOven = s.ovens.find(o => !o.hasDough && !o.isCooking && !o.pizzaReady);
+
+        if (waitingCustomer && s.carrying === "pizza_ready") {
+          hint = "A customer is getting impatient! Deliver now!";
+        } else if (readyPrep && s.carrying === "none") {
+          hint = "Pizza is ready at prep! Pick it up!";
+        } else if (readyOven && s.carrying === "none") {
+          hint = "Pizza is done in the oven!";
+        } else if (emptyOven && s.doughReady > 0 && s.carrying === "none") {
+          hint = "Grab some dough and fill the oven!";
+        } else if (waitingCustomer) {
+          hint = "A customer is waiting! Hurry!";
+        }
+
+        if (hint !== s.currentHint) {
+          useOfficeGame.setState({ currentHint: hint });
+        }
+      } else if (s.currentHint !== null) {
+        useOfficeGame.setState({ currentHint: null });
       }
     }
   });

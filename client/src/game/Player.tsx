@@ -29,6 +29,11 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const prestigeLevel = useOfficeGame((s) => s.prestigeLevel);
   const bobTimer = useRef(0);
   const targetRotation = useRef(0);
+  const footstepTimer = useRef(0);
+  const zoneTrackTimer = useRef(0);
+  const recordZoneVisit = useOfficeGame((s) => s.recordZoneVisit);
+  const activePowerUp = useOfficeGame((s) => s.activePowerUp);
+  const skills = useOfficeGame((s) => s.skills);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
 
@@ -65,8 +70,19 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       direction.normalize();
       const currentX = groupRef.current.position.x;
       const currentZ = groupRef.current.position.z;
-      let newX = currentX + direction.x * playerSpeed * delta;
-      let newZ = currentZ + direction.z * playerSpeed * delta;
+
+      // Speed boost from power-up
+      let effectiveSpeed = playerSpeed;
+      if (activePowerUp?.type === "speed_boost") effectiveSpeed *= 1.5;
+      // Speed burst skill: streak bonus
+      const speedBurstLevel = skills["speed_burst"] || 0;
+      const streak = useOfficeGame.getState().streak;
+      if (speedBurstLevel > 0 && streak > 0) {
+        effectiveSpeed *= 1 + (Math.min(streak, 10) * speedBurstLevel * 0.02);
+      }
+
+      let newX = currentX + direction.x * effectiveSpeed * delta;
+      let newZ = currentZ + direction.z * effectiveSpeed * delta;
 
       newX = Math.max(-0.5, Math.min(13.5, newX));
       newZ = Math.max(-5.5, Math.min(5.5, newZ));
@@ -78,6 +94,30 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       targetRotation.current = Math.atan2(direction.x, direction.z);
 
       bobTimer.current += delta * playerSpeed * 1.5;
+
+      // Footstep sounds
+      footstepTimer.current += delta;
+      if (footstepTimer.current >= 0.35) {
+        footstepTimer.current = 0;
+        const { gameAudio } = require("./SoundManager");
+        gameAudio.play("pickup", 0.06, 0.4 + Math.random() * 0.2);
+      }
+
+      // Update lastActivityTime
+      useOfficeGame.setState({ lastActivityTime: Date.now() });
+    }
+
+    // Zone tracking for heatmap
+    zoneTrackTimer.current += delta;
+    if (zoneTrackTimer.current >= 1.0 && groupRef.current) {
+      zoneTrackTimer.current = 0;
+      const px = groupRef.current.position.x;
+      let zone = "other";
+      if (px < 3) zone = "dough";
+      else if (px < 5.5) zone = "oven";
+      else if (px < 8.5) zone = "prep";
+      else zone = "dining";
+      recordZoneVisit(zone);
     }
 
     const currentRot = groupRef.current.rotation.y;

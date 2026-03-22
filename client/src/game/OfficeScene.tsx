@@ -16,6 +16,9 @@ import { ParticleSystem } from "./Particles";
 import { CameraEffects } from "./CameraEffects";
 import { EventLighting } from "./EventLighting";
 import { useRestaurantTheme } from "./RestaurantTheme";
+import { PowerUpSystem } from "./PowerUps";
+import { WallClock } from "./WallClock";
+import { WeatherEffects } from "./WeatherEffects";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -69,6 +72,9 @@ export function OfficeScene() {
       <GameLoop />
       <CameraEffects />
       <EventLighting />
+      <PowerUpSystem playerRef={playerRef} />
+      <WallClock />
+      <WeatherEffects />
     </>
   );
 }

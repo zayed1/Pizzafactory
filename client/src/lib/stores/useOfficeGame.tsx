@@ -4,9 +4,43 @@ import { subscribeWithSelector, persist } from "zustand/middleware";
 export type GamePhase = "menu" | "playing" | "paused";
 export type CustomerMood = "happy" | "neutral" | "worried" | "angry";
 export type ItemType = "none" | "dough" | "pizza_raw" | "pizza_ready";
-export type CustomerType = "normal" | "vip" | "patient" | "rush" | "tipper";
+export type CustomerType = "normal" | "vip" | "patient" | "rush" | "tipper" | "boss";
 export type SpecialOrder = "none" | "double" | "express" | "group";
 export type HatType = "chef" | "tall_chef" | "beret" | "crown" | "none";
+export type PowerUpType = "speed_boost" | "freeze_patience" | "double_money";
+export type PizzaRecipe = "classic" | "spicy" | "special";
+export type SkillId = "magnetic_pickup" | "tip_charm" | "iron_patience" | "speed_burst" | "bulk_cook" | "quick_prep";
+
+export interface PowerUpSpawn {
+  id: number;
+  type: PowerUpType;
+  position: [number, number, number];
+  spawnTime: number;
+}
+
+export interface ActivePowerUp {
+  type: PowerUpType;
+  remaining: number;
+  duration: number;
+}
+
+export const SKILL_DEFS: { id: SkillId; name: string; description: string; icon: string; maxLevel: number }[] = [
+  { id: "magnetic_pickup", name: "Magnetic Hands", description: "Increase pickup range by 0.5m per level", icon: "\u{1F9F2}", maxLevel: 3 },
+  { id: "tip_charm", name: "Tip Charm", description: "+$5 tip per delivery per level", icon: "\u{1F4B5}", maxLevel: 5 },
+  { id: "iron_patience", name: "Iron Patience", description: "Customers wait 1s longer per level", icon: "\u{1F9D8}", maxLevel: 5 },
+  { id: "speed_burst", name: "Speed Burst", description: "2% speed boost per delivery streak per level", icon: "\u{1F3C3}", maxLevel: 3 },
+  { id: "bulk_cook", name: "Bulk Cook", description: "10% chance to cook 2 pizzas at once per level", icon: "\u{1F525}", maxLevel: 3 },
+  { id: "quick_prep", name: "Quick Prep", description: "5% faster prep per level", icon: "\u2702\uFE0F", maxLevel: 4 },
+];
+
+export const TITLE_DEFS: { minLevel: number; minPizzas: number; title: string; icon: string }[] = [
+  { minLevel: 1, minPizzas: 0, title: "Beginner", icon: "\u{1F476}" },
+  { minLevel: 3, minPizzas: 15, title: "Cook", icon: "\u{1F373}" },
+  { minLevel: 5, minPizzas: 40, title: "Chef", icon: "\u{1F468}\u200D\u{1F373}" },
+  { minLevel: 8, minPizzas: 80, title: "Master Chef", icon: "\u{1F451}" },
+  { minLevel: 10, minPizzas: 120, title: "Pizza Legend", icon: "\u{1F31F}" },
+  { minLevel: 15, minPizzas: 200, title: "Pizza God", icon: "\u{1F525}" },
+];
 
 export interface Achievement {
   id: string;
@@ -67,6 +101,8 @@ export interface CustomerTable {
   specialOrder: SpecialOrder;
   servingsNeeded: number;
   servingsReceived: number;
+  requestedRecipe: PizzaRecipe;
+  walkProgress: number; // 0-1 for queue walking animation
 }
 
 export interface OvenState {
@@ -156,6 +192,36 @@ interface PizzaGameState {
   unlockedHats: HatType[];
   unlockedColors: string[];
 
+  // Power-ups
+  activePowerUp: ActivePowerUp | null;
+  powerUpSpawns: PowerUpSpawn[];
+
+  // Level stars
+  levelStars: Record<number, number>;
+  currentLevelMisses: number;
+  currentLevelSpeedServes: number;
+  currentLevelMaxCombo: number;
+
+  // Skill tree
+  skillPoints: number;
+  skills: Record<string, number>;
+
+  // Heatmap zone visits
+  zoneVisits: Record<string, number>;
+
+  // Smart hints
+  lastActivityTime: number;
+  currentHint: string | null;
+
+  // Adaptive difficulty
+  difficultyMultiplier: number;
+  consecutiveSessionServes: number;
+  consecutiveSessionMisses: number;
+
+  // Session enhanced stats
+  sessionBestCombo: number;
+  sessionMaxSingleEarning: number;
+
   upgrades: {
     speed: UpgradeInfo;
     capacity: UpgradeInfo;
@@ -201,6 +267,15 @@ interface PizzaGameState {
   setPlayerColor: (color: string) => void;
   setPlayerHat: (hat: HatType) => void;
   unlockCosmetic: (type: "hat" | "color", item: string) => boolean;
+
+  // New actions
+  spawnPowerUp: () => void;
+  collectPowerUp: (id: number) => void;
+  updatePowerUp: (delta: number) => void;
+  unlockSkill: (id: SkillId) => boolean;
+  recordZoneVisit: (zone: string) => void;
+  updateWalkProgress: (delta: number) => void;
+  getTitle: () => { title: string; icon: string };
 }
 
 const TABLE_POSITIONS: [number, number, number][] = [
@@ -236,6 +311,8 @@ function createTables(): CustomerTable[] {
     specialOrder: "none" as SpecialOrder,
     servingsNeeded: 1,
     servingsReceived: 0,
+    requestedRecipe: "classic" as PizzaRecipe,
+    walkProgress: 1,
   }));
 }
 
@@ -294,6 +371,13 @@ function createPrepEmployees(): PrepEmployee[] {
   return [
     { id: 0, hasPizza: false, isWorking: false, workProgress: 0, pizzaReady: false },
   ];
+}
+
+function calculateStars(misses: number, speedServes: number, maxCombo: number): number {
+  let stars = 1; // Always get at least 1 star
+  if (misses === 0) stars++; // No missed customers = 2nd star
+  if (speedServes >= 3 || maxCombo >= 3) stars++; // Speed or combo = 3rd star
+  return stars;
 }
 
 function createOvens(): OvenState[] {
@@ -370,6 +454,36 @@ export const useOfficeGame = create<PizzaGameState>()(
     unlockedHats: ["chef" as HatType, "none" as HatType],
     unlockedColors: ["#ffffff", "#dc2626", "#2563eb"],
 
+    // Power-ups
+    activePowerUp: null,
+    powerUpSpawns: [],
+
+    // Level stars
+    levelStars: {},
+    currentLevelMisses: 0,
+    currentLevelSpeedServes: 0,
+    currentLevelMaxCombo: 0,
+
+    // Skill tree
+    skillPoints: 0,
+    skills: {},
+
+    // Heatmap
+    zoneVisits: {},
+
+    // Smart hints
+    lastActivityTime: Date.now(),
+    currentHint: null,
+
+    // Adaptive difficulty
+    difficultyMultiplier: 1.0,
+    consecutiveSessionServes: 0,
+    consecutiveSessionMisses: 0,
+
+    // Session enhanced stats
+    sessionBestCombo: 0,
+    sessionMaxSingleEarning: 0,
+
     upgrades: {
       speed: { level: 0, cost: 30, baseCost: 30, maxLevel: 10 },
       capacity: { level: 0, cost: 150, baseCost: 150, maxLevel: 3 },
@@ -391,6 +505,18 @@ export const useOfficeGame = create<PizzaGameState>()(
         sessionPizzas: 0,
         fastestDelivery: 999,
         tutorialStep: s.tutorialDone ? -1 : 0,
+        sessionBestCombo: 0,
+        sessionMaxSingleEarning: 0,
+        consecutiveSessionServes: 0,
+        consecutiveSessionMisses: 0,
+        difficultyMultiplier: 1.0,
+        powerUpSpawns: [],
+        activePowerUp: null,
+        currentLevelMisses: 0,
+        currentLevelSpeedServes: 0,
+        currentLevelMaxCombo: 0,
+        lastActivityTime: Date.now(),
+        currentHint: null,
       });
     },
 
@@ -502,14 +628,22 @@ export const useOfficeGame = create<PizzaGameState>()(
       const streakBonus = Math.min(s.streak, 10);
       let cash = s.cashPerPizza + streakBonus * 5;
 
+      // Skill: tip charm bonus
+      const tipCharmBonus = (s.skills["tip_charm"] || 0) * 5;
+      cash += tipCharmBonus;
+
       // Customer type bonuses
       if (table.customerType === "vip") cash = Math.floor(cash * 2.5);
       else if (table.customerType === "rush") cash = Math.floor(cash * 1.5);
       else if (table.customerType === "tipper") cash += Math.floor(Math.random() * 20) + 10;
+      else if (table.customerType === "boss") cash = Math.floor(cash * 4.0);
 
       // Active event bonuses
       if (s.activeEvent?.type === "double_pay") cash *= 2;
       if (s.activeEvent?.type === "tips_rain") cash += 15;
+
+      // Power-up: double money
+      if (s.activePowerUp?.type === "double_money") cash *= 2;
 
       // Combo bonus (deliver multiple within 3s)
       const now = Date.now();
@@ -520,6 +654,10 @@ export const useOfficeGame = create<PizzaGameState>()(
       // Speed bonus - deliver before half patience
       const patienceRatio = 1 - table.customerTimer / table.customerMaxTime;
       if (patienceRatio > 0.75) cash += 10;
+
+      // Recipe match bonus
+      if (table.requestedRecipe === "spicy") cash += 8;
+      else if (table.requestedRecipe === "special") cash += 15;
 
       // Special order bonus
       if (table.specialOrder === "double") cash = Math.floor(cash * 1.8);
@@ -547,6 +685,14 @@ export const useOfficeGame = create<PizzaGameState>()(
         leveledUp = true;
       }
 
+      // Adaptive difficulty: adjust based on consecutive serves/misses
+      const newConsecServes = s.consecutiveSessionServes + 1;
+      let newDifficulty = s.difficultyMultiplier;
+      // Every 3 consecutive serves, slightly decrease patience (harder)
+      if (newConsecServes % 3 === 0) {
+        newDifficulty = Math.max(0.75, newDifficulty - 0.02);
+      }
+
       const updates: any = {
         carrying: s.carryCount > 1 ? "pizza_ready" : "none",
         carryCount: s.carryCount - 1,
@@ -566,11 +712,28 @@ export const useOfficeGame = create<PizzaGameState>()(
         comboCount: newCombo,
         fastestDelivery: newFastest,
         sessionPizzas: s.sessionPizzas + 1,
+        consecutiveSessionServes: newConsecServes,
+        consecutiveSessionMisses: 0,
+        difficultyMultiplier: newDifficulty,
+        sessionBestCombo: Math.max(s.sessionBestCombo, newCombo),
+        sessionMaxSingleEarning: Math.max(s.sessionMaxSingleEarning, cash),
+        lastActivityTime: now,
+        currentLevelSpeedServes: patienceRatio > 0.75 ? s.currentLevelSpeedServes + 1 : s.currentLevelSpeedServes,
+        currentLevelMaxCombo: Math.max(s.currentLevelMaxCombo, newCombo),
       };
 
       if (leveledUp) {
         updates.showLevelUp = true;
         updates.levelUpLevel = newLevel;
+        updates.skillPoints = s.skillPoints + 1;
+
+        // Calculate stars for the completed level
+        const stars = calculateStars(s.currentLevelMisses, s.currentLevelSpeedServes, s.currentLevelMaxCombo);
+        const prevBest = s.levelStars[s.gameLevel] || 0;
+        updates.levelStars = { ...s.levelStars, [s.gameLevel]: Math.max(prevBest, stars) };
+        updates.currentLevelMisses = 0;
+        updates.currentLevelSpeedServes = 0;
+        updates.currentLevelMaxCombo = 0;
       }
 
       set(updates);
@@ -631,8 +794,10 @@ export const useOfficeGame = create<PizzaGameState>()(
       const s = get();
       const emp = s.prepEmployees[empId];
       if (!emp || !emp.isWorking) return;
+      const quickPrepMult = 1 - (s.skills["quick_prep"] || 0) * 0.05;
+      const effectivePrepTime = s.prepWorkTime * quickPrepMult;
       const newProgress = emp.workProgress + delta;
-      if (newProgress >= s.prepWorkTime) {
+      if (newProgress >= effectivePrepTime) {
         const newEmps = [...s.prepEmployees];
         newEmps[empId] = { ...emp, isWorking: false, workProgress: 0, pizzaReady: true };
         set({ prepEmployees: newEmps });
@@ -655,7 +820,8 @@ export const useOfficeGame = create<PizzaGameState>()(
       const emptyTable = s.tables.find((t) => t.unlocked && !t.hasCustomer && !t.served);
       if (!emptyTable) return;
       const newTables = [...s.tables];
-      const patience = Math.max(14, s.customerPatience - (s.gameLevel - 1) * 0.4);
+      const ironPatienceBonus = (s.skills["iron_patience"] || 0) * 1;
+      const patience = Math.max(14, s.customerPatience - (s.gameLevel - 1) * 0.4 + ironPatienceBonus);
       const custColor = CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)];
       const hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
 
@@ -663,25 +829,46 @@ export const useOfficeGame = create<PizzaGameState>()(
       let custType: CustomerType = "normal";
       const roll = Math.random();
       if (s.gameLevel >= 2) {
-        if (roll < 0.08) custType = "vip";        // 8% VIP (pays 2.5x)
-        else if (roll < 0.18) custType = "tipper"; // 10% tipper (random bonus)
-        else if (roll < 0.28) custType = "patient";// 10% patient (1.5x patience)
-        else if (roll < 0.38) custType = "rush";   // 10% rush (0.6x patience, 1.5x pay)
+        if (roll < 0.08) custType = "vip";
+        else if (roll < 0.18) custType = "tipper";
+        else if (roll < 0.28) custType = "patient";
+        else if (roll < 0.38) custType = "rush";
+      }
+
+      // Boss customer: every 5 levels, 15% chance
+      if (s.gameLevel >= 5 && s.gameLevel % 5 === 0 && Math.random() < 0.15) {
+        custType = "boss";
       }
 
       // Rush hour event doubles spawn rate effect
       let adjustedPatience = patience;
       if (custType === "patient") adjustedPatience *= 1.5;
       else if (custType === "rush") adjustedPatience *= 0.6;
+      else if (custType === "boss") adjustedPatience *= 2.5;
+
+      // Apply adaptive difficulty
+      adjustedPatience *= s.difficultyMultiplier;
 
       // Special orders from level 4
       let specOrder: SpecialOrder = "none";
       let servings = 1;
-      if (s.gameLevel >= 4) {
+      if (custType === "boss") {
+        specOrder = "group";
+        servings = 5;
+        adjustedPatience *= 1.2;
+      } else if (s.gameLevel >= 4) {
         const specRoll = Math.random();
         if (specRoll < 0.06) { specOrder = "express"; adjustedPatience *= 0.4; servings = 1; }
         else if (specRoll < 0.14) { specOrder = "double"; servings = 2; }
         else if (specRoll < 0.20) { specOrder = "group"; servings = 3; adjustedPatience *= 1.5; }
+      }
+
+      // Pizza recipe (from level 3)
+      let recipe: PizzaRecipe = "classic";
+      if (s.gameLevel >= 3) {
+        const recipeRoll = Math.random();
+        if (recipeRoll < 0.3) recipe = "spicy";
+        else if (recipeRoll < 0.5) recipe = "special";
       }
 
       newTables[emptyTable.id] = {
@@ -690,12 +877,14 @@ export const useOfficeGame = create<PizzaGameState>()(
         customerTimer: 0,
         customerMaxTime: adjustedPatience,
         served: false,
-        customerColor: custType === "vip" ? "#fbbf24" : custColor,
+        customerColor: custType === "vip" ? "#fbbf24" : custType === "boss" ? "#ef4444" : custColor,
         customerHairColor: hairColor,
         customerType: custType,
         specialOrder: specOrder,
         servingsNeeded: servings,
         servingsReceived: 0,
+        requestedRecipe: recipe,
+        walkProgress: 0,
       };
       set({ tables: newTables });
     },
@@ -704,6 +893,8 @@ export const useOfficeGame = create<PizzaGameState>()(
       const s = get();
       let changed = false;
       let missed = 0;
+      // Freeze patience if power-up active
+      const freezePatience = s.activePowerUp?.type === "freeze_patience";
       const newTables = s.tables.map((t) => {
         if (!t.hasCustomer) {
           if (t.served) {
@@ -712,19 +903,33 @@ export const useOfficeGame = create<PizzaGameState>()(
           }
           return t;
         }
-        const newTimer = t.customerTimer + delta;
+        // Update walk progress (queue animation)
+        let walkProg = t.walkProgress;
+        if (walkProg < 1) {
+          walkProg = Math.min(1, walkProg + delta * 2);
+          changed = true;
+        }
+        const newTimer = freezePatience ? t.customerTimer : t.customerTimer + delta;
         if (newTimer >= t.customerMaxTime) {
           changed = true;
           missed++;
-          return { ...t, hasCustomer: false, customerTimer: 0, served: false };
+          return { ...t, hasCustomer: false, customerTimer: 0, served: false, walkProgress: 1 };
         }
         changed = true;
-        return { ...t, customerTimer: newTimer };
+        return { ...t, customerTimer: newTimer, walkProgress: walkProg };
       });
       if (changed) {
         const updates: any = { tables: newTables, missedCustomers: s.missedCustomers + missed };
         if (missed > 0) {
           updates.streak = 0;
+          updates.currentLevelMisses = s.currentLevelMisses + missed;
+          // Adaptive difficulty: ease up on consecutive misses
+          const newConsecMisses = s.consecutiveSessionMisses + missed;
+          if (newConsecMisses >= 2) {
+            updates.difficultyMultiplier = Math.min(1.3, s.difficultyMultiplier + 0.05);
+          }
+          updates.consecutiveSessionMisses = newConsecMisses;
+          updates.consecutiveSessionServes = 0;
         }
         set(updates);
       }
@@ -950,6 +1155,14 @@ export const useOfficeGame = create<PizzaGameState>()(
         prestigeLevel: newPrestige,
         prestigeMultiplier: newMultiplier,
         phase: "menu",
+        activePowerUp: null,
+        powerUpSpawns: [],
+        currentLevelMisses: 0,
+        currentLevelSpeedServes: 0,
+        currentLevelMaxCombo: 0,
+        difficultyMultiplier: 1.0,
+        consecutiveSessionServes: 0,
+        consecutiveSessionMisses: 0,
       });
       // Unlock cosmetics on prestige
       const st = get();
@@ -979,6 +1192,91 @@ export const useOfficeGame = create<PizzaGameState>()(
         set({ money: s.money - 50, unlockedColors: [...s.unlockedColors, item] });
         return true;
       }
+    },
+
+    // Power-up actions
+    spawnPowerUp: () => {
+      const s = get();
+      if (s.powerUpSpawns.length >= 2) return;
+      const types: PowerUpType[] = ["speed_boost", "freeze_patience", "double_money"];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const x = 2 + Math.random() * 10;
+      const z = -4 + Math.random() * 8;
+      const spawn: PowerUpSpawn = { id: Date.now(), type, position: [x, 0.5, z], spawnTime: Date.now() };
+      set({ powerUpSpawns: [...s.powerUpSpawns, spawn] });
+    },
+
+    collectPowerUp: (id: number) => {
+      const s = get();
+      const pu = s.powerUpSpawns.find(p => p.id === id);
+      if (!pu) return;
+      const durations: Record<PowerUpType, number> = { speed_boost: 10, freeze_patience: 8, double_money: 15 };
+      const names: Record<PowerUpType, string> = { speed_boost: "Speed Boost!", freeze_patience: "Patience Freeze!", double_money: "Double Money!" };
+      const icons: Record<PowerUpType, string> = { speed_boost: "\u26A1", freeze_patience: "\u2744\uFE0F", double_money: "\u{1F4B0}" };
+      set({
+        powerUpSpawns: s.powerUpSpawns.filter(p => p.id !== id),
+        activePowerUp: { type: pu.type, remaining: durations[pu.type], duration: durations[pu.type] },
+      });
+      get().addNotification(names[pu.type], icons[pu.type], "#06b6d4");
+    },
+
+    updatePowerUp: (delta: number) => {
+      const s = get();
+      if (!s.activePowerUp) return;
+      const remaining = s.activePowerUp.remaining - delta;
+      if (remaining <= 0) {
+        set({ activePowerUp: null });
+      } else {
+        set({ activePowerUp: { ...s.activePowerUp, remaining } });
+      }
+      // Remove old power-up spawns (30s lifetime)
+      const now = Date.now();
+      const fresh = s.powerUpSpawns.filter(p => now - p.spawnTime < 30000);
+      if (fresh.length !== s.powerUpSpawns.length) set({ powerUpSpawns: fresh });
+    },
+
+    unlockSkill: (id: SkillId) => {
+      const s = get();
+      if (s.skillPoints <= 0) return false;
+      const def = SKILL_DEFS.find(d => d.id === id);
+      if (!def) return false;
+      const current = s.skills[id] || 0;
+      if (current >= def.maxLevel) return false;
+      set({
+        skillPoints: s.skillPoints - 1,
+        skills: { ...s.skills, [id]: current + 1 },
+      });
+      get().addNotification(`${def.name} Lv.${current + 1}`, def.icon, "#a855f7");
+      return true;
+    },
+
+    recordZoneVisit: (zone: string) => {
+      const s = get();
+      set({ zoneVisits: { ...s.zoneVisits, [zone]: (s.zoneVisits[zone] || 0) + 1 } });
+    },
+
+    updateWalkProgress: (delta: number) => {
+      const s = get();
+      let changed = false;
+      const newTables = s.tables.map(t => {
+        if (t.hasCustomer && t.walkProgress < 1) {
+          changed = true;
+          return { ...t, walkProgress: Math.min(1, t.walkProgress + delta * 2) };
+        }
+        return t;
+      });
+      if (changed) set({ tables: newTables });
+    },
+
+    getTitle: () => {
+      const s = get();
+      let best = TITLE_DEFS[0];
+      for (const def of TITLE_DEFS) {
+        if (s.gameLevel >= def.minLevel && s.totalPizzasServed >= def.minPizzas) {
+          best = def;
+        }
+      }
+      return { title: best.title, icon: best.icon };
     },
   })),
   {
@@ -1012,6 +1310,10 @@ export const useOfficeGame = create<PizzaGameState>()(
       playerHat: state.playerHat,
       unlockedHats: state.unlockedHats,
       unlockedColors: state.unlockedColors,
+      levelStars: state.levelStars,
+      skillPoints: state.skillPoints,
+      skills: state.skills,
+      zoneVisits: state.zoneVisits,
       // Save counts to reconstruct ovens/employees/tables on load
       _savedOvenCount: state.ovens.length,
       _savedPrepCount: state.prepEmployees.length,

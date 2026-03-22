@@ -156,5 +156,26 @@ export function SoundManager() {
     }
   }, [tables]);
 
+  // Ambient oven sound: play subtle sizzle when ovens are cooking
+  const ovens = useOfficeGame((s) => s.ovens);
+  const prevCookingCount = useRef(0);
+  useEffect(() => {
+    const cooking = ovens.filter(o => o.isCooking).length;
+    if (cooking > prevCookingCount.current) {
+      gameAudio.play("pickup", 0.04, 0.3); // Low rumble
+    }
+    prevCookingCount.current = cooking;
+  }, [ovens]);
+
+  // Power-up collect sound
+  const activePowerUp = useOfficeGame((s) => s.activePowerUp);
+  const prevPowerUp = useRef(activePowerUp);
+  useEffect(() => {
+    if (activePowerUp && !prevPowerUp.current) {
+      gameAudio.play("cash", 0.4, 2.0); // High sparkle sound
+    }
+    prevPowerUp.current = activePowerUp;
+  }, [activePowerUp]);
+
   return null;
 }
