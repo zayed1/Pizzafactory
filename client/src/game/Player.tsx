@@ -118,6 +118,7 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       else if (px < 8.5) zone = "prep";
       else zone = "dining";
       recordZoneVisit(zone);
+      useOfficeGame.setState({ playerPos: [groupRef.current.position.x, groupRef.current.position.z] });
     }
 
     const currentRot = groupRef.current.rotation.y;

@@ -19,6 +19,9 @@ import { useRestaurantTheme } from "./RestaurantTheme";
 import { PowerUpSystem } from "./PowerUps";
 import { WallClock } from "./WallClock";
 import { WeatherEffects } from "./WeatherEffects";
+import { HiddenTreasureSystem } from "./HiddenTreasure";
+import { TrophyShelf } from "./TrophyShelf";
+import { SkillEffects } from "./SkillEffects";
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -73,6 +76,9 @@ export function OfficeScene() {
       <CameraEffects />
       <EventLighting />
       <PowerUpSystem playerRef={playerRef} />
+      <HiddenTreasureSystem playerRef={playerRef} />
+      <SkillEffects playerRef={playerRef} />
+      <TrophyShelf />
       <WallClock />
       <WeatherEffects />
     </>

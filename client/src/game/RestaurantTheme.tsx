@@ -133,9 +133,36 @@ export function getThemeTier(level: number): number {
   return 4;
 }
 
+// Custom theme color overrides for player-selected themes
+const CUSTOM_THEME_OVERRIDES: Record<string, Partial<ThemeColors>> = {
+  ocean: {
+    wallLeft: "#d4e8f0", wallRight: "#1a4a6b", wallBack: "#7cb8d4", wallFront: "#7cb8d4",
+    wallTrim: "#2980b9", diningFloor: "#1a3a5c", lightEmissive: "#5dade2",
+  },
+  forest: {
+    wallLeft: "#d4e8d0", wallRight: "#2d5a1e", wallBack: "#7cac6a", wallFront: "#7cac6a",
+    wallTrim: "#27ae60", diningFloor: "#1a3a1e", lightEmissive: "#82e0aa",
+  },
+  sunset: {
+    wallLeft: "#f0d4c4", wallRight: "#6b2a1a", wallBack: "#d48a5c", wallFront: "#d48a5c",
+    wallTrim: "#e67e22", diningFloor: "#3a1a0a", lightEmissive: "#f5b041",
+  },
+  royal: {
+    wallLeft: "#d4c4e8", wallRight: "#2a1a5a", wallBack: "#8a6cb4", wallFront: "#8a6cb4",
+    wallTrim: "#8e44ad", diningFloor: "#1a0a3a", lightEmissive: "#bb8fce",
+  },
+};
+
 export function useRestaurantTheme(): ThemeColors {
   const gameLevel = useOfficeGame((s) => s.gameLevel);
-  return useMemo(() => THEMES[getThemeTier(gameLevel)], [gameLevel]);
+  const restaurantThemeId = useOfficeGame((s) => s.restaurantThemeId);
+  return useMemo(() => {
+    const base = THEMES[getThemeTier(gameLevel)];
+    if (restaurantThemeId === "default") return base;
+    const overrides = CUSTOM_THEME_OVERRIDES[restaurantThemeId];
+    if (!overrides) return base;
+    return { ...base, ...overrides };
+  }, [gameLevel, restaurantThemeId]);
 }
 
 export { THEMES };

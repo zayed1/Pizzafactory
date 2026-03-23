@@ -177,5 +177,30 @@ export function SoundManager() {
     prevPowerUp.current = activePowerUp;
   }, [activePowerUp]);
 
+  // Music pitch changes per level tier
+  const gameLevel = useOfficeGame((s) => s.gameLevel);
+  useEffect(() => {
+    // Subtle pitch increase as levels go up
+    const basePitch = 1.0 + Math.min(0.15, (gameLevel - 1) * 0.02);
+    gameAudio.setMusicSpeed(basePitch);
+  }, [gameLevel]);
+
+  // Night shift ambient - lower volume during night
+  const isNightShift = useOfficeGame((s) => s.isNightShift);
+  useEffect(() => {
+    gameAudio.setMusicVolume(isNightShift ? 0.1 : 0.15);
+  }, [isNightShift]);
+
+  // Hidden treasure collect sound
+  const hiddenTreasures = useOfficeGame((s) => s.hiddenTreasures);
+  const prevTreasureCount = useRef(hiddenTreasures.length);
+  useEffect(() => {
+    if (hiddenTreasures.length < prevTreasureCount.current) {
+      // A treasure was collected
+      gameAudio.play("cash", 0.5, 1.8);
+    }
+    prevTreasureCount.current = hiddenTreasures.length;
+  }, [hiddenTreasures]);
+
   return null;
 }

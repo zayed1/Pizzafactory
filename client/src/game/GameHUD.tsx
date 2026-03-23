@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { useIAPStore } from "./IAPStore";
 import { TutorialOverlay } from "./Tutorial";
+import { MiniMap } from "./MiniMap";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -350,6 +351,15 @@ export function GameHUD() {
   const currentHint = useOfficeGame((s) => s.currentHint);
   const levelStars = useOfficeGame((s) => s.levelStars);
   const getTitle = useOfficeGame((s) => s.getTitle);
+  const reputation = useOfficeGame((s) => s.reputation);
+  const quickOrders = useOfficeGame((s) => s.quickOrders);
+  const isNightShift = useOfficeGame((s) => s.isNightShift);
+  const dailyXP = useOfficeGame((s) => s.dailyXP);
+  const dailyXPTarget = useOfficeGame((s) => s.dailyXPTarget);
+  const dailyRewardsClaimed = useOfficeGame((s) => s.dailyRewardsClaimed);
+  const claimDailyReward = useOfficeGame((s) => s.claimDailyReward);
+  const recentRatings = useOfficeGame((s) => s.recentRatings);
+  const playerPos = useOfficeGame((s) => s.playerPos);
   const unlockedTables = tables.filter((t) => t.unlocked).length;
   const totalTables = tables.length;
   const isMobile = useIsMobile();
@@ -417,6 +427,175 @@ export function GameHUD() {
 
       {/* Daily Challenges */}
       <DailyChallengePanel isMobile={isMobile} />
+
+      {/* Night Shift Indicator */}
+      {isNightShift && (
+        <div style={{
+          position: "absolute",
+          top: isMobile ? 38 : 48,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(15,23,42,0.9)",
+          borderRadius: 10,
+          padding: "3px 12px",
+          color: "#818cf8",
+          fontSize: 11,
+          fontWeight: 700,
+          fontFamily: "'Inter', sans-serif",
+          border: "1px solid rgba(129,140,248,0.4)",
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          zIndex: 38,
+          pointerEvents: "none",
+        }}>
+          {"\u{1F319}"} Night Shift (2x Cash!)
+        </div>
+      )}
+
+      {/* Quick Orders (top right, below controls) */}
+      {quickOrders.length > 0 && !isMobile && (
+        <div style={{
+          position: "absolute",
+          top: 105,
+          right: 12,
+          background: "rgba(0,0,0,0.85)",
+          borderRadius: 10,
+          padding: "6px 10px",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(251,191,36,0.3)",
+          zIndex: 30,
+          pointerEvents: "none",
+          maxWidth: 200,
+        }}>
+          <div style={{ color: "#fbbf24", fontSize: 10, fontWeight: 700, marginBottom: 4, fontFamily: "'Inter', sans-serif" }}>
+            {"\u26A1"} Quick Orders
+          </div>
+          {quickOrders.map((qo) => {
+            const pct = Math.min(100, (qo.progress / qo.target) * 100);
+            return (
+              <div key={qo.id} style={{ marginBottom: 4 }}>
+                <div style={{ fontSize: 10, color: "#e2e8f0", fontFamily: "'Inter', sans-serif", display: "flex", justifyContent: "space-between" }}>
+                  <span>{qo.icon} {qo.description}</span>
+                  <span style={{ color: "#fbbf24", fontSize: 9 }}>{Math.ceil(qo.timeRemaining)}s</span>
+                </div>
+                <div style={{ height: 3, background: "rgba(255,255,255,0.1)", borderRadius: 2, marginTop: 2 }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: "#fbbf24", borderRadius: 2, transition: "width 0.3s" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Reputation Bar */}
+      {!isMobile && (
+        <div style={{
+          position: "absolute",
+          bottom: 100,
+          right: 12,
+          background: "rgba(0,0,0,0.8)",
+          borderRadius: 10,
+          padding: "6px 10px",
+          backdropFilter: "blur(10px)",
+          border: `1px solid ${reputation >= 75 ? "rgba(34,197,94,0.3)" : reputation >= 50 ? "rgba(251,191,36,0.3)" : "rgba(239,68,68,0.3)"}`,
+          pointerEvents: "none",
+          zIndex: 30,
+        }}>
+          <div style={{ color: "#94a3b8", fontSize: 9, fontFamily: "'Inter', sans-serif", marginBottom: 2 }}>Reputation</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 40, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{
+                width: `${reputation}%`,
+                height: "100%",
+                background: reputation >= 75 ? "#22c55e" : reputation >= 50 ? "#fbbf24" : "#ef4444",
+                borderRadius: 3,
+                transition: "width 0.5s ease",
+              }} />
+            </div>
+            <span style={{
+              color: reputation >= 75 ? "#22c55e" : reputation >= 50 ? "#fbbf24" : "#ef4444",
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              {reputation}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Daily XP Bar */}
+      {!isMobile && (
+        <div style={{
+          position: "absolute",
+          bottom: 130,
+          right: 12,
+          background: "rgba(0,0,0,0.8)",
+          borderRadius: 10,
+          padding: "6px 10px",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(59,130,246,0.3)",
+          pointerEvents: dailyXP >= dailyXPTarget ? "auto" : "none",
+          zIndex: 30,
+          cursor: dailyXP >= dailyXPTarget && dailyRewardsClaimed < 3 ? "pointer" : "default",
+        }}
+          onClick={() => {
+            if (dailyXP >= dailyXPTarget && dailyRewardsClaimed < 3) claimDailyReward();
+          }}
+        >
+          <div style={{ color: "#94a3b8", fontSize: 9, fontFamily: "'Inter', sans-serif", marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
+            <span>Daily XP</span>
+            <span style={{ color: "#fbbf24", fontSize: 8 }}>{dailyRewardsClaimed}/3 claimed</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 40, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{
+                width: `${Math.min(100, (dailyXP / dailyXPTarget) * 100)}%`,
+                height: "100%",
+                background: "#3b82f6",
+                borderRadius: 3,
+                transition: "width 0.5s ease",
+              }} />
+            </div>
+            <span style={{ color: "#3b82f6", fontSize: 10, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
+              {dailyXP}/{dailyXPTarget}
+            </span>
+          </div>
+          {dailyXP >= dailyXPTarget && dailyRewardsClaimed < 3 && (
+            <div style={{ color: "#fbbf24", fontSize: 8, marginTop: 2, textAlign: "center", fontWeight: 600 }}>
+              Click to claim!
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Customer Rating Popups */}
+      {recentRatings.slice(-3).map((r, i) => {
+        const age = (Date.now() - r.time) / 1000;
+        if (age > 3) return null;
+        return (
+          <div key={`rating-${r.time}-${i}`} style={{
+            position: "absolute",
+            top: isMobile ? 70 + i * 25 : 90 + i * 30,
+            right: isMobile ? 4 : 160,
+            background: "rgba(0,0,0,0.8)",
+            borderRadius: 8,
+            padding: "3px 10px",
+            fontSize: 14,
+            opacity: Math.max(0, 1 - age / 3),
+            transform: `translateY(${-age * 10}px)`,
+            transition: "opacity 0.3s, transform 0.3s",
+            pointerEvents: "none",
+            zIndex: 45,
+          }}>
+            {r.emoji} {"⭐".repeat(r.rating)}
+          </div>
+        );
+      })}
+
+      {/* Mini Map (desktop only) */}
+      {!isMobile && <MiniMap playerPos={playerPos} />}
 
       {/* Tutorial */}
       <TutorialOverlay />

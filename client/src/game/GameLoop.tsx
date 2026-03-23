@@ -14,11 +14,20 @@ export function GameLoop() {
   const updatePowerUp = useOfficeGame((s) => s.updatePowerUp);
   const spawnPowerUp = useOfficeGame((s) => s.spawnPowerUp);
   const gameLevel = useOfficeGame((s) => s.gameLevel);
+  const updateNightShift = useOfficeGame((s) => s.updateNightShift);
+  const spawnQuickOrders = useOfficeGame((s) => s.spawnQuickOrders);
+  const updateQuickOrders = useOfficeGame((s) => s.updateQuickOrders);
+  const spawnTreasure = useOfficeGame((s) => s.spawnTreasure);
+  const updateTreasures = useOfficeGame((s) => s.updateTreasures);
+  const initWeeklyChallenges = useOfficeGame((s) => s.initWeeklyChallenges);
   const customerTimer = useRef(0);
   const eventTimer = useRef(0);
   const powerUpTimer = useRef(0);
   const firstSpawn = useRef(false);
   const hintTimer = useRef(0);
+  const quickOrderTimer = useRef(0);
+  const treasureTimer = useRef(0);
+  const weeklyInit = useRef(false);
 
   useFrame((_, delta) => {
     if (phase !== "playing") return;
@@ -29,10 +38,19 @@ export function GameLoop() {
       spawnCustomer();
     }
 
+    // Initialize weekly challenges once
+    if (!weeklyInit.current) {
+      weeklyInit.current = true;
+      initWeeklyChallenges();
+    }
+
     updateCustomerTimers(delta);
     updateStreak(delta);
     updateEvent(delta);
     updatePowerUp(delta);
+    updateNightShift(delta);
+    updateQuickOrders(delta);
+    updateTreasures(delta);
 
     // Customer spawning - faster during rush hour
     const spawnInterval = activeEvent?.type === "rush_hour"
@@ -62,6 +80,24 @@ export function GameLoop() {
         if (Math.random() < 0.35) {
           spawnPowerUp();
         }
+      }
+    }
+
+    // Quick order spawning (every ~60s from level 6+)
+    if (gameLevel >= 6) {
+      quickOrderTimer.current += delta;
+      if (quickOrderTimer.current >= 60) {
+        quickOrderTimer.current = 0;
+        spawnQuickOrders();
+      }
+    }
+
+    // Treasure spawning (every 120-180s)
+    treasureTimer.current += delta;
+    if (treasureTimer.current >= 120 + Math.random() * 60) {
+      treasureTimer.current = 0;
+      if (Math.random() < 0.5) {
+        spawnTreasure();
       }
     }
 
