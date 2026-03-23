@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { useIAPStore } from "./IAPStore";
 import { TutorialOverlay } from "./Tutorial";
@@ -364,6 +364,20 @@ export function GameHUD() {
   const totalTables = tables.length;
   const isMobile = useIsMobile();
   const [showUpgrades, setShowUpgrades] = useState(!isMobile);
+  const [goldenFlash, setGoldenFlash] = useState(false);
+  const prevMoneyRef = useRef(money);
+
+  // Golden flash on big earnings (>$80 in one go)
+  useEffect(() => {
+    if (money > prevMoneyRef.current) {
+      const diff = money - prevMoneyRef.current;
+      if (diff >= 80) {
+        setGoldenFlash(true);
+        setTimeout(() => setGoldenFlash(false), 600);
+      }
+    }
+    prevMoneyRef.current = money;
+  }, [money]);
 
   // Calculate efficiency
   const busyOvens = ovens.filter(o => o.isCooking || o.pizzaReady).length;
@@ -414,6 +428,21 @@ export function GameHUD() {
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      {/* Golden Flash on big earnings */}
+      {goldenFlash && (
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: "none",
+          zIndex: 90,
+          boxShadow: "inset 0 0 80px 20px rgba(251,191,36,0.4)",
+          animation: "golden-flash 0.6s ease-out forwards",
+        }} />
+      )}
+
       {/* Level Up Celebration */}
       {showLevelUp && (
         <LevelUpOverlay level={levelUpLevel} onDismiss={handleDismissLevelUp} />
@@ -640,23 +669,43 @@ export function GameHUD() {
             <span style={{ fontSize: isMobile ? 9 : 12, color: "#fbbf24", marginLeft: 2 }}>+</span>
           </div>
 
-          {/* Carrying */}
+          {/* Carrying - Circular indicator */}
           <div
             style={{
               background: "rgba(0,0,0,0.8)",
-              borderRadius: 10,
-              padding: isMobile ? "5px 8px" : "8px 12px",
-              color: carryColor,
-              fontSize: isMobile ? 11 : 13,
+              borderRadius: "50%",
+              width: isMobile ? 38 : 48,
+              height: isMobile ? 38 : 48,
               display: "flex",
               alignItems: "center",
-              gap: 4,
+              justifyContent: "center",
+              position: "relative",
               backdropFilter: "blur(10px)",
-              border: `1px solid ${carryColor}33`,
+              border: `2px solid ${carryColor}`,
+              boxShadow: carrying !== "none" ? `0 0 10px ${carryColor}44` : "none",
             }}
           >
-            <span style={{ fontSize: isMobile ? 13 : 16 }}>{carryIcon}</span>
-            {carryLabel}{carryCount > 1 ? ` x${carryCount}` : ""}
+            {/* Ring progress for carry state */}
+            <svg style={{ position: "absolute", top: -2, left: -2, width: isMobile ? 42 : 52, height: isMobile ? 42 : 52, transform: "rotate(-90deg)" }}>
+              <circle
+                cx={isMobile ? 21 : 26}
+                cy={isMobile ? 21 : 26}
+                r={isMobile ? 17 : 21}
+                fill="none"
+                stroke={carryColor}
+                strokeWidth="3"
+                strokeDasharray={`${carrying === "none" ? 0 : carrying === "dough" ? 33 : carrying === "pizza_raw" ? 66 : 100} 100`}
+                strokeLinecap="round"
+                opacity={0.8}
+                pathLength="100"
+              />
+            </svg>
+            <span style={{ fontSize: isMobile ? 16 : 20, position: "relative", zIndex: 1 }}>{carryIcon}</span>
+            {carryCount > 1 && (
+              <span style={{ position: "absolute", bottom: -2, right: -2, background: carryColor, color: "#000", fontSize: 9, fontWeight: 800, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {carryCount}
+              </span>
+            )}
           </div>
 
           {/* Streak */}
@@ -818,46 +867,59 @@ export function GameHUD() {
         </div>
       )}
 
-      {/* Efficiency Meter */}
+      {/* Speedometer Efficiency Gauge */}
       {!isMobile && (
         <div style={{
           position: "absolute",
           bottom: 70,
           right: 12,
           background: "rgba(0,0,0,0.8)",
-          borderRadius: 10,
-          padding: "6px 10px",
+          borderRadius: 12,
+          padding: "8px 10px",
           backdropFilter: "blur(10px)",
           border: `1px solid ${efficiency > 70 ? "rgba(34,197,94,0.3)" : efficiency > 40 ? "rgba(251,191,36,0.3)" : "rgba(239,68,68,0.3)"}`,
           pointerEvents: "none",
           zIndex: 30,
+          width: 70,
+          textAlign: "center",
         }}>
-          <div style={{ color: "#94a3b8", fontSize: 9, fontFamily: "'Inter', sans-serif", marginBottom: 2 }}>Efficiency</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{
-              width: 40,
-              height: 6,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 3,
-              overflow: "hidden",
-            }}>
-              <div style={{
-                width: `${efficiency}%`,
-                height: "100%",
-                background: efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444",
-                borderRadius: 3,
-                transition: "width 0.5s ease",
-              }} />
-            </div>
-            <span style={{
-              color: efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444",
-              fontSize: 12,
-              fontWeight: 700,
-              fontFamily: "'Inter', sans-serif",
-            }}>
-              {efficiency}%
-            </span>
+          <svg width="60" height="35" viewBox="0 0 60 35" style={{ display: "block", margin: "0 auto" }}>
+            {/* Background arc */}
+            <path
+              d="M 5 30 A 25 25 0 0 1 55 30"
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+            {/* Colored arc based on efficiency */}
+            <path
+              d="M 5 30 A 25 25 0 0 1 55 30"
+              fill="none"
+              stroke={efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444"}
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={`${efficiency * 0.785} 100`}
+            />
+            {/* Needle */}
+            {(() => {
+              const angle = Math.PI - (efficiency / 100) * Math.PI;
+              const nx = 30 + Math.cos(angle) * 18;
+              const ny = 30 - Math.sin(angle) * 18;
+              return <line x1="30" y1="30" x2={nx} y2={ny} stroke="#fff" strokeWidth="2" strokeLinecap="round" />;
+            })()}
+            <circle cx="30" cy="30" r="3" fill="#fff" />
+          </svg>
+          <div style={{
+            color: efficiency > 70 ? "#22c55e" : efficiency > 40 ? "#fbbf24" : "#ef4444",
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: "'Inter', sans-serif",
+            marginTop: 2,
+          }}>
+            {efficiency}%
           </div>
+          <div style={{ color: "#94a3b8", fontSize: 8, fontFamily: "'Inter', sans-serif" }}>Efficiency</div>
         </div>
       )}
 
@@ -1066,6 +1128,10 @@ export function GameHUD() {
           50% { transform: scale(1.1); }
           70% { transform: scale(0.95); }
           100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes golden-flash {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
         }
         @keyframes notif-slide {
           from { transform: translateY(-20px); opacity: 0; }

@@ -16,6 +16,8 @@ const ITEM_LABELS: Record<ItemType, string> = {
 export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
+  const leftArmRef = useRef<THREE.Group>(null);
+  const rightArmRef = useRef<THREE.Group>(null);
   const [subscribe, getKeys] = useKeyboardControls();
   const playerSpeed = useOfficeGame((s) => s.playerSpeed);
   const carrying = useOfficeGame((s) => s.carrying);
@@ -34,6 +36,16 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
   const recordZoneVisit = useOfficeGame((s) => s.recordZoneVisit);
   const activePowerUp = useOfficeGame((s) => s.activePowerUp);
   const skills = useOfficeGame((s) => s.skills);
+  const streak = useOfficeGame((s) => s.streak);
+  // Footstep trail
+  const trailRef = useRef<THREE.InstancedMesh>(null);
+  const trailPositions = useRef<{ x: number; z: number; age: number }[]>([]);
+  const trailDummy = useRef(new THREE.Object3D());
+  const trailTimer = useRef(0);
+  // Victory dance
+  const danceTimer = useRef(0);
+  const prevStreak = useRef(0);
+  const isDancing = useRef(false);
 
   useImperativeHandle(ref, () => groupRef.current!, []);
 
@@ -136,10 +148,87 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
         bodyRef.current.rotation.z *= 0.9;
       }
     }
+
+    // Arm swing animation
+    const armSwing = isMoving ? Math.sin(bobTimer.current * 2) * 0.6 : 0;
+    if (leftArmRef.current) {
+      leftArmRef.current.rotation.x = leftArmRef.current.rotation.x + (armSwing - leftArmRef.current.rotation.x) * Math.min(1, delta * 10);
+    }
+    if (rightArmRef.current) {
+      rightArmRef.current.rotation.x = rightArmRef.current.rotation.x + (-armSwing - rightArmRef.current.rotation.x) * Math.min(1, delta * 10);
+    }
+
+    // Footstep trail
+    if (isMoving && groupRef.current) {
+      trailTimer.current += delta;
+      if (trailTimer.current >= 0.2) {
+        trailTimer.current = 0;
+        trailPositions.current.push({
+          x: groupRef.current.position.x,
+          z: groupRef.current.position.z,
+          age: 0,
+        });
+        if (trailPositions.current.length > 16) trailPositions.current.shift();
+      }
+    }
+    // Update trail instances
+    if (trailRef.current) {
+      trailPositions.current.forEach((t, i) => {
+        t.age += delta;
+      });
+      trailPositions.current = trailPositions.current.filter(t => t.age < 2);
+      for (let i = 0; i < 16; i++) {
+        const t = trailPositions.current[i];
+        if (t) {
+          const opacity = Math.max(0, 1 - t.age / 2);
+          trailDummy.current.position.set(t.x, 0.01, t.z);
+          trailDummy.current.scale.setScalar(0.06 * opacity);
+          trailDummy.current.rotation.x = -Math.PI / 2;
+        } else {
+          trailDummy.current.position.set(0, -10, 0);
+          trailDummy.current.scale.setScalar(0);
+        }
+        trailDummy.current.updateMatrix();
+        trailRef.current.setMatrixAt(i, trailDummy.current.matrix);
+      }
+      trailRef.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // Victory dance on streak milestones (5, 10, 15...)
+    if (streak > prevStreak.current && streak >= 5 && streak % 5 === 0) {
+      isDancing.current = true;
+      danceTimer.current = 0;
+    }
+    prevStreak.current = streak;
+    if (isDancing.current) {
+      danceTimer.current += delta;
+      if (bodyRef.current) {
+        bodyRef.current.rotation.y = danceTimer.current * 12;
+        bodyRef.current.position.y = Math.abs(Math.sin(danceTimer.current * 8)) * 0.15;
+      }
+      if (danceTimer.current > 0.8) {
+        isDancing.current = false;
+        if (bodyRef.current) {
+          bodyRef.current.rotation.y = 0;
+        }
+      }
+    }
   });
 
   return (
     <group ref={groupRef} position={[4, 0, 0]}>
+      {/* Ground shadow */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.25, 16]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.25} depthWrite={false} />
+      </mesh>
+
+      {/* Footstep trail instances */}
+      <instancedMesh ref={trailRef} args={[undefined, undefined, 16]} frustumCulled={false}>
+        <circleGeometry args={[1, 6]} />
+        <meshBasicMaterial color="#8b7355" transparent opacity={0.3} depthWrite={false} />
+      </instancedMesh>
+
       <group ref={bodyRef}>
       <mesh position={[0, 0.15, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.15, 0.3, 8]} />
@@ -156,6 +245,31 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
         <meshStandardMaterial color={playerColor} />
       </mesh>
 
+      {/* Left Arm */}
+      <group ref={leftArmRef} position={[0.26, 0.55, 0]}>
+        <mesh position={[0, -0.1, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.06, 0.22, 6]} />
+          <meshStandardMaterial color={playerColor} />
+        </mesh>
+        <mesh position={[0, -0.22, 0]}>
+          <sphereGeometry args={[0.05, 6, 6]} />
+          <meshStandardMaterial color="#deb887" />
+        </mesh>
+      </group>
+
+      {/* Right Arm */}
+      <group ref={rightArmRef} position={[-0.26, 0.55, 0]}>
+        <mesh position={[0, -0.1, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.06, 0.22, 6]} />
+          <meshStandardMaterial color={playerColor} />
+        </mesh>
+        <mesh position={[0, -0.22, 0]}>
+          <sphereGeometry args={[0.05, 6, 6]} />
+          <meshStandardMaterial color="#deb887" />
+        </mesh>
+      </group>
+
+      {/* Buttons */}
       <mesh position={[0, 0.42, 0.18]}>
         <sphereGeometry args={[0.03, 6, 6]} />
         <meshStandardMaterial color="#1e293b" />
@@ -288,19 +402,31 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
               )}
               {carrying === "pizza_ready" && (
                 <group>
+                  {/* Crust */}
                   <mesh castShadow>
-                    <cylinderGeometry args={[0.15, 0.15, 0.04, 8]} />
+                    <cylinderGeometry args={[0.15, 0.15, 0.04, 12]} />
                     <meshStandardMaterial color="#d4740a" />
                   </mesh>
-                  <mesh position={[0.04, 0.03, 0.02]}>
+                  {/* Sauce layer */}
+                  <mesh position={[0, 0.025, 0]}>
+                    <cylinderGeometry args={[0.12, 0.12, 0.01, 12]} />
+                    <meshStandardMaterial color="#dc2626" opacity={0.8} transparent />
+                  </mesh>
+                  {/* Melted cheese ring */}
+                  <mesh position={[0, 0.035, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                    <torusGeometry args={[0.08, 0.025, 6, 12]} />
+                    <meshStandardMaterial color="#fbbf24" roughness={0.6} />
+                  </mesh>
+                  {/* Toppings */}
+                  <mesh position={[0.04, 0.04, 0.02]}>
                     <sphereGeometry args={[0.025, 6, 6]} />
                     <meshStandardMaterial color="#ef4444" />
                   </mesh>
-                  <mesh position={[-0.05, 0.03, -0.03]}>
+                  <mesh position={[-0.05, 0.04, -0.03]}>
                     <sphereGeometry args={[0.025, 6, 6]} />
                     <meshStandardMaterial color="#22c55e" />
                   </mesh>
-                  <mesh position={[0.01, 0.03, -0.05]}>
+                  <mesh position={[0.01, 0.04, -0.05]}>
                     <sphereGeometry args={[0.02, 6, 6]} />
                     <meshStandardMaterial color="#fbbf24" />
                   </mesh>

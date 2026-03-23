@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { OfficeFloor } from "./OfficeFoor";
 import { Player } from "./Player";
@@ -22,6 +23,31 @@ import { WeatherEffects } from "./WeatherEffects";
 import { HiddenTreasureSystem } from "./HiddenTreasure";
 import { TrophyShelf } from "./TrophyShelf";
 import { SkillEffects } from "./SkillEffects";
+
+function SwingingLight({ position }: { position: [number, number, number] }) {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.rotation.z = Math.sin(Date.now() * 0.001) * 0.08;
+      groupRef.current.rotation.x = Math.cos(Date.now() * 0.0008) * 0.04;
+    }
+  });
+  return (
+    <group position={position}>
+      <group ref={groupRef}>
+        <mesh position={[0, -0.15, 0]}>
+          <cylinderGeometry args={[0.005, 0.005, 0.3, 4]} />
+          <meshStandardMaterial color="#555" />
+        </mesh>
+        <mesh position={[0, -0.33, 0]}>
+          <coneGeometry args={[0.15, 0.12, 8]} />
+          <meshStandardMaterial color="#d97706" metalness={0.4} roughness={0.3} />
+        </mesh>
+        <pointLight position={[0, -0.4, 0]} intensity={0.8} color="#fbbf24" distance={4} />
+      </group>
+    </group>
+  );
+}
 
 export function OfficeScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -79,6 +105,7 @@ export function OfficeScene() {
       <HiddenTreasureSystem playerRef={playerRef} />
       <SkillEffects playerRef={playerRef} />
       <TrophyShelf />
+      <SwingingLight position={[5, 2.8, 0]} />
       <WallClock />
       <WeatherEffects />
     </>

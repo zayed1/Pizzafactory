@@ -41,6 +41,11 @@ function SingleOven({ ovenId, playerRef }: { ovenId: number; playerRef: React.Re
   const ovenCookTime = useOfficeGame((s) => s.ovenCookTime);
   const phase = useOfficeGame((s) => s.phase);
   const [isNear, setIsNear] = useState(false);
+  const doorRef = useRef<THREE.Group>(null);
+  const doorAngle = useRef(0);
+  const prevCooking = useRef(false);
+  const prevReady = useRef(false);
+  const glowRef = useRef<THREE.PointLight>(null);
 
   const oven = ovens[ovenId];
   const pos = OVEN_POSITIONS[ovenId];
@@ -67,6 +72,31 @@ function SingleOven({ ovenId, playerRef }: { ovenId: number; playerRef: React.Re
     }
 
     updateOven(ovenId, delta);
+
+    // Door animation: open briefly when state transitions
+    const justStartedCooking = oven.isCooking && !prevCooking.current;
+    const justBecameReady = oven.pizzaReady && !prevReady.current;
+    const justPickedUp = !oven.pizzaReady && prevReady.current;
+    if (justStartedCooking || justBecameReady || justPickedUp) {
+      doorAngle.current = Math.PI / 3; // open door
+    }
+    prevCooking.current = oven.isCooking;
+    prevReady.current = oven.pizzaReady;
+
+    // Smoothly close door
+    if (doorAngle.current > 0) {
+      doorAngle.current = Math.max(0, doorAngle.current - delta * 2);
+    }
+    if (doorRef.current) {
+      doorRef.current.rotation.y = doorAngle.current;
+    }
+
+    // Station glow: pulse when player approaches with dough and oven is empty
+    if (glowRef.current) {
+      const shouldGlow = near && carrying === "dough" && !oven.hasDough && !oven.isCooking && !oven.pizzaReady;
+      const targetIntensity = shouldGlow ? 2 + Math.sin(Date.now() * 0.006) * 1 : 0;
+      glowRef.current.intensity += (targetIntensity - glowRef.current.intensity) * Math.min(1, delta * 8);
+    }
   });
 
   if (!oven) return null;
@@ -92,21 +122,26 @@ function SingleOven({ ovenId, playerRef }: { ovenId: number; playerRef: React.Re
         </mesh>
       ))}
 
-      <mesh position={[0, 0.5, 0.61]} castShadow>
-        <boxGeometry args={[0.85, 0.65, 0.03]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
+      {/* Animated door - pivots from left edge */}
+      <group ref={doorRef} position={[-0.42, 0.5, 0.61]}>
+        <mesh position={[0.42, 0, 0]} castShadow>
+          <boxGeometry args={[0.85, 0.65, 0.03]} />
+          <meshStandardMaterial color="#1a1a1a" />
+        </mesh>
+        <mesh position={[0.42, 0, 0.02]}>
+          <boxGeometry args={[0.7, 0.5, 0.01]} />
+          <meshStandardMaterial
+            color={glowColor}
+            emissive={glowColor}
+            emissiveIntensity={oven.isCooking ? 1.0 : oven.pizzaReady ? 0.5 : 0.05}
+            transparent
+            opacity={0.8}
+          />
+        </mesh>
+      </group>
 
-      <mesh position={[0, 0.5, 0.63]}>
-        <boxGeometry args={[0.7, 0.5, 0.01]} />
-        <meshStandardMaterial
-          color={glowColor}
-          emissive={glowColor}
-          emissiveIntensity={oven.isCooking ? 1.0 : oven.pizzaReady ? 0.5 : 0.05}
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
+      {/* Approach glow - pulses when player can place dough */}
+      <pointLight ref={glowRef} position={[0, 0.5, 1.0]} intensity={0} color="#60a5fa" distance={2.5} />
 
       <mesh position={[0.3, 0.85, 0.62]}>
         <cylinderGeometry args={[0.03, 0.03, 0.08, 6]} />

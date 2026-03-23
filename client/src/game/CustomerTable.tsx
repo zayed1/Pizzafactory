@@ -239,6 +239,12 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
 
   return (
     <group ref={groupRef} position={[walkOffset, 0, 0.9]}>
+      {/* Ground shadow */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.2, 12]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.2} depthWrite={false} />
+      </mesh>
+
       {/* VIP glow ring */}
       {isVIP && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -329,37 +335,51 @@ function CustomerModel({ table }: { table: CustomerTableType }) {
           </>
         )}
 
-        {/* Eyes */}
-        <mesh position={[0.04, 0.84, 0.1]}>
-          <sphereGeometry args={[hasGlasses ? 0.018 : 0.02, 6, 6]} />
-          <meshStandardMaterial color="#1e293b" />
-        </mesh>
-        <mesh position={[-0.04, 0.84, 0.1]}>
-          <sphereGeometry args={[hasGlasses ? 0.018 : 0.02, 6, 6]} />
-          <meshStandardMaterial color="#1e293b" />
-        </mesh>
+        {/* Eyes - shrink when angry, wide when happy */}
+        {(() => {
+          const eyeSize = patienceRatio > 0.7 ? 0.022 : patienceRatio > 0.4 ? 0.02 : 0.016;
+          const eyeY = patienceRatio > 0.7 ? 0.84 : patienceRatio > 0.3 ? 0.84 : 0.835;
+          return (
+            <>
+              <mesh position={[0.04, eyeY, 0.1]}>
+                <sphereGeometry args={[hasGlasses ? Math.min(eyeSize, 0.018) : eyeSize, 6, 6]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+              <mesh position={[-0.04, eyeY, 0.1]}>
+                <sphereGeometry args={[hasGlasses ? Math.min(eyeSize, 0.018) : eyeSize, 6, 6]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+            </>
+          );
+        })()}
 
-        {/* Mouth */}
-        {patienceRatio > 0.4 ? (
-          <mesh position={[0, 0.76, 0.11]}>
-            <boxGeometry args={[0.06, 0.015, 0.01]} />
-            <meshStandardMaterial color={patienceRatio > 0.7 ? "#22c55e" : "#f59e0b"} />
-          </mesh>
-        ) : (
-          <mesh position={[0, 0.76, 0.11]}>
-            <boxGeometry args={[0.06, 0.015, 0.01]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
+        {/* Mouth - curves up when happy, straight when neutral, down when angry */}
+        <mesh position={[0, 0.76, 0.11]} rotation={[0, 0, patienceRatio > 0.7 ? 0 : patienceRatio > 0.4 ? 0 : 0.15]}>
+          <boxGeometry args={[patienceRatio > 0.5 ? 0.06 : 0.05, 0.015, 0.01]} />
+          <meshStandardMaterial color={patienceRatio > 0.7 ? "#22c55e" : patienceRatio > 0.4 ? "#f59e0b" : "#ef4444"} />
+        </mesh>
+        {/* Happy cheeks */}
+        {patienceRatio > 0.7 && (
+          <>
+            <mesh position={[0.06, 0.78, 0.09]}>
+              <sphereGeometry args={[0.012, 4, 4]} />
+              <meshStandardMaterial color="#ffb3b3" />
+            </mesh>
+            <mesh position={[-0.06, 0.78, 0.09]}>
+              <sphereGeometry args={[0.012, 4, 4]} />
+              <meshStandardMaterial color="#ffb3b3" />
+            </mesh>
+          </>
         )}
 
-        {/* Angry eyebrows */}
-        {patienceRatio <= 0.25 && (
+        {/* Eyebrows - appear gradually, anger increases rotation */}
+        {patienceRatio <= 0.5 && (
           <>
-            <mesh position={[0.05, 0.86, 0.1]} rotation={[0, 0, -0.2]}>
+            <mesh position={[0.05, 0.87, 0.1]} rotation={[0, 0, patienceRatio <= 0.15 ? -0.4 : patienceRatio <= 0.25 ? -0.3 : -0.15]}>
               <boxGeometry args={[0.04, 0.008, 0.008]} />
               <meshStandardMaterial color="#1e293b" />
             </mesh>
-            <mesh position={[-0.05, 0.86, 0.1]} rotation={[0, 0, 0.2]}>
+            <mesh position={[-0.05, 0.87, 0.1]} rotation={[0, 0, patienceRatio <= 0.15 ? 0.4 : patienceRatio <= 0.25 ? 0.3 : 0.15]}>
               <boxGeometry args={[0.04, 0.008, 0.008]} />
               <meshStandardMaterial color="#1e293b" />
             </mesh>
