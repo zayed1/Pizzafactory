@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useOfficeGame } from "../lib/stores/useOfficeGame";
 import { Text } from "@react-three/drei";
 
-const DOUGH_MAKER_POS: [number, number, number] = [1, 0, -1.5];
+const DOUGH_MAKER_POS: [number, number, number] = [1.5, 0, 0];
 const INTERACT_DISTANCE = 2.0;
 
 function MixerBowl() {
@@ -51,6 +51,7 @@ export function DoughMaker({ playerRef }: { playerRef: React.RefObject<THREE.Gro
   const phase = useOfficeGame((s) => s.phase);
   const [isNear, setIsNear] = useState(false);
   const spawnTimer = useRef(0);
+  const glowRef = useRef<THREE.PointLight>(null);
 
   useFrame((_, delta) => {
     if (!playerRef.current || phase !== "playing") return;
@@ -72,6 +73,13 @@ export function DoughMaker({ playerRef }: { playerRef: React.RefObject<THREE.Gro
     if (spawnTimer.current >= doughSpawnInterval) {
       spawnTimer.current = 0;
       spawnDough();
+    }
+
+    // Station approach glow: pulse when player can pick up dough
+    if (glowRef.current) {
+      const shouldGlow = near && doughReady > 0 && carrying === "none";
+      const target = shouldGlow ? 2.5 + Math.sin(Date.now() * 0.006) * 1 : 0;
+      glowRef.current.intensity += (target - glowRef.current.intensity) * Math.min(1, delta * 8);
     }
   });
 
@@ -151,6 +159,9 @@ export function DoughMaker({ playerRef }: { playerRef: React.RefObject<THREE.Gro
         color={isNear ? "#fbbf24" : "#f5deb3"}
         distance={3}
       />
+
+      {/* Approach glow */}
+      <pointLight ref={glowRef} position={[0, 0.6, 0.5]} intensity={0} color="#60a5fa" distance={2} />
     </group>
   );
 }

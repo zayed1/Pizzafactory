@@ -82,6 +82,13 @@ export function FloatingTextManager() {
           ? [servedTable.position[0], 2.5, servedTable.position[2] + 0.45]
           : [8, 2.5, 0];
         addFloatingText(`+$${earned}`, "#22c55e", pos);
+
+        // Show bonus text for large earnings
+        if (earned >= 80) {
+          addFloatingText("AMAZING!", "#fbbf24", [pos[0], pos[1] + 0.5, pos[2]]);
+        } else if (earned >= 50) {
+          addFloatingText("GREAT!", "#a855f7", [pos[0], pos[1] + 0.5, pos[2]]);
+        }
       }
     }
     prevServed.current = totalPizzasServed;

@@ -7,9 +7,9 @@ import { Text } from "@react-three/drei";
 const INTERACT_DISTANCE = 2.0;
 
 const PREP_POSITIONS: [number, number, number][] = [
-  [9, 0, -3],
-  [9, 0, 0],
-  [9, 0, 3],
+  [7, 0, -2.5],
+  [7, 0, 0],
+  [7, 0, 2.5],
 ];
 
 function PrepProgressBar({ emp, prepWorkTime }: { emp: PrepEmployee; prepWorkTime: number }) {
