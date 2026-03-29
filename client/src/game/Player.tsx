@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useOfficeGame, ItemType } from "../lib/stores/useOfficeGame";
 import { resolveCollision } from "./collisions";
 import { useTouchInput } from "./TouchControls";
+import { gameAudio } from "./SoundManager";
 
 const ITEM_LABELS: Record<ItemType, string> = {
   none: "",
@@ -111,7 +112,6 @@ export const Player = forwardRef<THREE.Group>(function Player(_, ref) {
       footstepTimer.current += delta;
       if (footstepTimer.current >= 0.35) {
         footstepTimer.current = 0;
-        const { gameAudio } = require("./SoundManager");
         gameAudio.play("pickup", 0.06, 0.4 + Math.random() * 0.2);
       }
 
