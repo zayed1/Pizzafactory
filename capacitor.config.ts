@@ -12,6 +12,22 @@ const config: CapacitorConfig = {
     preferredContentMode: "mobile",
     scheme: "Pizza Factory",
     allowsLinkPreview: false,
+    backgroundColor: "#0f172a",
+  },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: true,
+      launchShowDuration: 1500,
+      backgroundColor: "#0f172a",
+      showSpinner: false,
+    },
+    StatusBar: {
+      style: "LIGHT",
+      backgroundColor: "#0f172a",
+    },
+    Keyboard: {
+      resize: "none",
+    },
   },
 };
 
